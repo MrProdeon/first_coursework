@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "first-coursework"
+version = "0.1.0"
+description = ""
+authors = ["Prodeon <prodeon21@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+
+[tool.poetry.group.dev.dependencies]
+requests = "^2.32.5"
+logging = "^0.4.9.6"
+pandas = "^2.3.3"
+pytest = "^8.4.2"
+python-dotenv = "^1.2.1"
+
+
+[tool.poetry.group.linters.dependencies]
+flake8 = "^7.3.0"
+mypy = "^1.18.2"
+black = "^25.9.0"
+isort = "^7.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
