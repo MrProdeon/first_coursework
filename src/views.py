@@ -1,6 +1,8 @@
 import datetime
 import pandas as pd
 from pandas.core.interchange.dataframe_protocol import DataFrame
+import requests
+from requests import RequestException, HTTPError
 
 path = r"..\data\operations.xlsx"
 
@@ -67,6 +69,26 @@ def get_top_5_transactions(dataframe_with_operations : DataFrame) -> dict:
 
     return top_5_transaction_by_sum
 
+def get_currency_rate():
+    url = "https://www.cbr-xml-daily.ru/daily_json.js"
+    try:
+        response = requests.get(url, timeout=15)
+        response.raise_for_status()
+
+        dict_response = response.json()
+        currency_rate = {
+            "USD" : dict_response["Valute"]["USD"]["Value"],
+            "EUR" : dict_response["Valute"]["EUR"]["Value"]
+        }
+        return currency_rate
+    except requests.exceptions.HTTPError as error:
+        print(f"Произошла ошибка : {error}")
+        return None
+    except requests.exceptions.Timeout as error:
+        print(f"Время ожидания превысило ожидаемое.")
+        return None
+
+print(get_currency_rate())
 
 
 
