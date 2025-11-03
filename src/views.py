@@ -43,6 +43,32 @@ def get_info_about_card(dataframe_with_operations : DataFrame) -> dict:
 
     return grouped_by_card.to_dict(orient="records")
 
+def get_top_5_transactions(dataframe_with_operations : DataFrame) -> dict:
+
+    sorted_by_sum = dataframe_with_operations.sort_values(by="Сумма операции").head()
+    sorted_by_sum.rename(columns={
+        "Дата операции" : "date",
+        "Сумма операции" : "amount",
+        "Категория" : "category",
+        "Описание" : "description"
+
+    }, inplace=True)
+
+    top_5_transaction_by_sum = []
+
+    for index, row in sorted_by_sum.iterrows():
+        searched_dict = {
+            "date" : row["date"],
+            "amount" : abs(row["amount"]),
+            "category" : row["category"],
+            "description" : row["description"]
+        }
+        top_5_transaction_by_sum.append(searched_dict)
+
+    return top_5_transaction_by_sum
+
+
+
 
 
 
