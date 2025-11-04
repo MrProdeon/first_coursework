@@ -40,6 +40,12 @@ def operations_reader(path_to_file: str) -> pd.DataFrame:
     file = pd.read_excel(path_to_file)
     return file
 
+def user_setting_reader(path_to_file : str) -> dict:
+    with open(path_to_file, "r", encoding="UTF-8") as file:
+        readed_file = json.load(file)
+
+    return readed_file
+
 
 def get_info_about_card(dataframe_with_operations: pd.DataFrame) -> list[dict]:
     """Функция для преобразования данных из датафрейма в информацию о номерах карт,
@@ -100,10 +106,11 @@ def get_currency_rate() -> dict | None:
         response.raise_for_status()
 
         dict_response = response.json()
-        currency_rate = {
-            "USD": dict_response["Valute"]["USD"]["Value"],
-            "EUR": dict_response["Valute"]["EUR"]["Value"],
+        currency_rate = { currency : dict_response["Valute"][currency]["Value"]
+        for currency in user_setting_reader("../user_setting.json")["user_currencies"]
         }
+
+
         currency_rate_list = [{"currency": k, "rate": v} for k, v in currency_rate.items()]
         return currency_rate_list
     except requests.exceptions.HTTPError as error:
@@ -157,4 +164,5 @@ def main_page(date_sting: str) -> str:
 
 
 
-print(main_page("2025-11-04 23:01:01"))
+print(user_setting_reader("../user_setting.json"))
+print(main_page("2025-11-04 01:01:01"))
