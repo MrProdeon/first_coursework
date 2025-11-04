@@ -8,7 +8,7 @@ import requests
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
-file_handler = logging.FileHandler("main_page.log", encoding="UTF-8", mode="a")
+file_handler = logging.FileHandler("../logs/main_page.log", encoding="UTF-8", mode="a")
 file_formatter = logging.Formatter(
     "%(asctime)s %(message)s %(funcName)s %(filename)s %(lineno)s"
 )
