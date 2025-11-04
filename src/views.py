@@ -7,13 +7,14 @@ from utils.main_page_functions import (create_datetime_object,
                                        get_top_5_transactions,
                                        operations_reader)
 
+path = r"..\data\operations.xlsx"
 
 def main_page(date_sting: str) -> str:
 
     date_object = create_datetime_object(date_sting)
     greeting = get_time_of_day_greeting(date_object)
 
-    operations = operations_reader(r"../data/operations.xlsx").fillna(
+    operations = operations_reader(path).fillna(
         "Информация не указана."
     )
     info_about_card = get_info_about_card(operations)
