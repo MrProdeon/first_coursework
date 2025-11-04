@@ -104,7 +104,8 @@ def get_currency_rate() -> dict | None:
             "USD": dict_response["Valute"]["USD"]["Value"],
             "EUR": dict_response["Valute"]["EUR"]["Value"],
         }
-        return currency_rate
+        currency_rate_list = [{"currency": k, "rate": v} for k, v in currency_rate.items()]
+        return currency_rate_list
     except requests.exceptions.HTTPError as error:
         print(f"Произошла ошибка : {error}")
         return None
@@ -127,7 +128,7 @@ def get_stocks_price() -> dict:
         ).json()
         top_5_stock_prices.setdefault(response_stock["ticker"], response_stock["price"])
 
-    return top_5_stock_prices
+    return [{"stock" : k, "price" : v} for k, v in top_5_stock_prices.items()]
 
 
 def main_page(date_sting: str) -> str:
