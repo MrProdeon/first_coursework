@@ -91,6 +91,8 @@ def get_info_about_card(dataframe_with_operations: pd.DataFrame) -> list[dict]:
     Вернет список словарей, где каждый словарь - описанные выше данные
     """
     try:
+
+        dataframe_with_operations = dataframe_with_operations[dataframe_with_operations["Сумма операции"] < 0]
         grouped_by_card = (
             dataframe_with_operations.groupby("Номер карты")
             .agg({"Сумма операции": "sum"})
@@ -115,8 +117,9 @@ def get_info_about_card(dataframe_with_operations: pd.DataFrame) -> list[dict]:
 
 def get_top_5_transactions(dataframe_with_operations: pd.DataFrame) -> list:
     try:
+        dataframe_with_operations = dataframe_with_operations[dataframe_with_operations["Сумма операции"] < 0]
         sorted_by_sum = dataframe_with_operations.sort_values(
-            by="Сумма операции", ascending=False
+            by="Сумма операции", ascending=True
         ).head()
         sorted_by_sum.rename(
             columns={
@@ -194,3 +197,10 @@ def get_stocks_price() -> list | None:
     except Exception as error:
         logger.error(f"Произошла ошибка {error}")
     return stocks_price_list
+
+##############
+
+
+# def get_expenses(path_to_file : str) -> str:
+#     operations = operations_reader(path_to_file)
+#     total = operations[]
