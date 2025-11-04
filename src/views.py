@@ -13,6 +13,8 @@ APIKEY = os.getenv("APININJAS_KEY")
 
 path = r"..\data\operations.xlsx"
 
+user_setting_path = "../user_setting.json"
+
 
 def create_datetime_object(date_str: str) -> datetime.datetime:
     """Функция для преобразования строковой даты в объект даты datetime"""
@@ -107,7 +109,7 @@ def get_currency_rate() -> dict | None:
 
         dict_response = response.json()
         currency_rate = { currency : dict_response["Valute"][currency]["Value"]
-        for currency in user_setting_reader("../user_setting.json")["user_currencies"]
+        for currency in user_setting_reader(user_setting_path)["user_currencies"]
         }
 
 
@@ -123,19 +125,15 @@ def get_currency_rate() -> dict | None:
 
 def get_stocks_price() -> dict:
     headers = {"X-Api-Key": APIKEY}
-    url = "https://api.api-ninjas.com/v1/sp500"
-    response_sp500 = requests.get(url, headers=headers).json()
 
-    top_5_stock_prices: dict[str, float] = {}
-
-    for i in range(5):
-        ticker = response_sp500[i]["ticker"]
+    stocks_price_list = []
+    for ticker in user_setting_reader(user_setting_path)["user_stocks"]:
         response_stock = requests.get(
             f"https://api.api-ninjas.com/v1/stockprice?ticker={ticker}", headers=headers
         ).json()
-        top_5_stock_prices.setdefault(response_stock["ticker"], response_stock["price"])
+        stocks_price_list.append({"stock" : response_stock["ticker"], "price" : response_stock["price"]})
 
-    return [{"stock" : k, "price" : v} for k, v in top_5_stock_prices.items()]
+    return stocks_price_list
 
 
 def main_page(date_sting: str) -> str:
@@ -156,13 +154,13 @@ def main_page(date_sting: str) -> str:
         "greeting": greeting,
         "cards": [card for card in info_about_card],
         "top_transactions": [transaction for transaction in top_5_transactions],
-        "currency_rates": [currency_rate],
-        "stocks_prices": [stocks_price],
+        "currency_rates": currency_rate,
+        "stocks_prices": stocks_price,
     }
 
     return json.dumps(json_result, indent=4, ensure_ascii=False)
 
 
 
-print(user_setting_reader("../user_setting.json"))
+print(user_setting_reader(user_setting_path))
 print(main_page("2025-11-04 01:01:01"))
