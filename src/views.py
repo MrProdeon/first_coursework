@@ -1,11 +1,11 @@
 import json
 
-from utils.main_page_functions import (create_datetime_object,
-                                       get_currency_rate, get_info_about_card,
-                                       get_stocks_price,
-                                       get_time_of_day_greeting,
-                                       get_top_5_transactions,
-                                       operations_reader)
+from utils.views_functions import (create_datetime_object,
+                                   get_currency_rate, get_info_about_card,
+                                   get_stocks_price,
+                                   get_time_of_day_greeting,
+                                   get_top_5_transactions,
+                                   operations_reader)
 
 path = r"..\data\operations.xlsx"
 
@@ -32,3 +32,8 @@ def main_page(date_sting: str) -> str:
     }
 
     return json.dumps(json_result, indent=4, ensure_ascii=False)
+
+print(main_page("2025-01-01 00:00:00"))
+
+# def events_page(date_string : str, date_range : str = "M") -> str:
+#     pass
