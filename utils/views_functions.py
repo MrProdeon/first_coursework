@@ -6,6 +6,7 @@ import os
 import pandas as pd
 import requests
 from dotenv import load_dotenv
+from collections import Counter
 
 logger = logging.getLogger(__name__)
 file_handler = logging.FileHandler("../logs/main_page.log", encoding="UTF-8", mode="a")
@@ -201,6 +202,18 @@ def get_stocks_price() -> list | None:
 ##############
 
 
-# def get_expenses(path_to_file : str) -> str:
-#     operations = operations_reader(path_to_file)
-#     total = operations[]
+def get_expenses(path_to_file : str) -> str:
+    operations = operations_reader(path_to_file)
+
+    expenses = operations[operations["Сумма операции"] < 0]
+
+    total_expenses = expenses["Сумма операции"].sum()
+
+    grouped_by_categories = expenses.groupby(by="Категория", as_index=False).agg({"Сумма операции" : "sum"}).sort_values(by="Сумма операции",  ascending=True).head(7)
+    main_expenses_in_categories = [{"category" : row["Категория"], "amount": row["Сумма операции"]} for index, row in grouped_by_categories.iterrows()]
+
+    return main_expenses_in_categories
+
+
+
+print(get_expenses(path))
