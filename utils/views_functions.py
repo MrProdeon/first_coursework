@@ -93,7 +93,9 @@ def get_info_about_card(dataframe_with_operations: pd.DataFrame) -> list[dict]:
     """
     try:
 
-        dataframe_with_operations = dataframe_with_operations[dataframe_with_operations["Сумма операции"] < 0]
+        dataframe_with_operations = dataframe_with_operations[
+            dataframe_with_operations["Сумма операции"] < 0
+        ]
         grouped_by_card = (
             dataframe_with_operations.groupby("Номер карты")
             .agg({"Сумма операции": "sum"})
@@ -118,7 +120,9 @@ def get_info_about_card(dataframe_with_operations: pd.DataFrame) -> list[dict]:
 
 def get_top_5_transactions(dataframe_with_operations: pd.DataFrame) -> list:
     try:
-        dataframe_with_operations = dataframe_with_operations[dataframe_with_operations["Сумма операции"] < 0]
+        dataframe_with_operations = dataframe_with_operations[
+            dataframe_with_operations["Сумма операции"] < 0
+        ]
         sorted_by_sum = dataframe_with_operations.sort_values(
             by="Сумма операции", ascending=True
         ).head()
@@ -199,21 +203,40 @@ def get_stocks_price() -> list | None:
         logger.error(f"Произошла ошибка {error}")
     return stocks_price_list
 
+
 ##############
 
 
-def get_expenses(path_to_file : str) -> str:
+def get_expenses(path_to_file: str) -> str:
     operations = operations_reader(path_to_file)
 
     expenses = operations[operations["Сумма операции"] < 0]
 
-    total_expenses = expenses["Сумма операции"].sum()
+    total_expenses = expenses["Сумма операции"].sum() # Общая сумма расходов.
 
-    grouped_by_categories = expenses.groupby(by="Категория", as_index=False).agg({"Сумма операции" : "sum"}).sort_values(by="Сумма операции",  ascending=True).head(7)
-    main_expenses_in_categories = [{"category" : row["Категория"], "amount": row["Сумма операции"]} for index, row in grouped_by_categories.iterrows()]
 
-    return main_expenses_in_categories
+    grouped_by_categories = (
+        expenses.groupby(by="Категория", as_index=False)
+        .agg({"Сумма операции": "sum"})
+        .sort_values(by="Сумма операции", ascending=True)
+        .head(7)
+    )
+    main_expenses_in_categories = [
+        {"category": row["Категория"], "amount": row["Сумма операции"]}
+        for index, row in grouped_by_categories.iterrows()
+    ] # Раздел «Основные»
 
+    transfers_and_cash = (
+        expenses.loc[expenses["Категория"].isin(["Переводы", "Наличные"])]
+        .groupby("Категория", as_index=False)["Сумма операции"]
+        .sum()
+    ).sort_values(by="Сумма операции", ascending=True)
+    transfers_and_cash_list = [
+        {"category": row["Категория"], "amount": abs(row["Сумма операции"])}
+        for index, row in transfers_and_cash.iterrows()
+    ] # Раздел «Переводы и наличные»
+
+    return transfers_and_cash_list
 
 
 print(get_expenses(path))
