@@ -123,17 +123,23 @@ def get_currency_rate() -> dict | None:
         return None
 
 
-def get_stocks_price() -> dict:
+def get_stocks_price() -> dict | None:
     headers = {"X-Api-Key": APIKEY}
 
-    stocks_price_list = []
-    for ticker in user_setting_reader(user_setting_path)["user_stocks"]:
-        response_stock = requests.get(
-            f"https://api.api-ninjas.com/v1/stockprice?ticker={ticker}", headers=headers
-        ).json()
-        stocks_price_list.append({"stock" : response_stock["ticker"], "price" : response_stock["price"]})
-
+    stocks_price_list: List[Dict[str, float]] = []
+    for ticker in user_setting_reader(user_setting_path).get("user_stocks", []):
+        try:
+            response_stock = requests.get(
+                f"https://api.api-ninjas.com/v1/stockprice?ticker={ticker}", headers=headers
+            )
+            response_stock.raise_for_status()
+            response_stock = response_stock.json()
+            stocks_price_list.append({"stock" : response_stock["ticker"], "price" : response_stock["price"]})
+        except requests.exceptions.HTTPError as error:
+            print(f"Произошла ошибка {error}")
     return stocks_price_list
+
+
 
 
 def main_page(date_sting: str) -> str:
