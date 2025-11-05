@@ -222,7 +222,7 @@ def get_expenses(path_to_file: str) -> str:
         .head(7)
     )
     main_expenses_in_categories = [
-        {"category": row["Категория"], "amount": row["Сумма операции"]}
+        {"category": row["Категория"], "amount": abs(row["Сумма операции"])}
         for index, row in grouped_by_categories.iterrows()
     ] # Раздел «Основные»
 
@@ -236,7 +236,12 @@ def get_expenses(path_to_file: str) -> str:
         for index, row in transfers_and_cash.iterrows()
     ] # Раздел «Переводы и наличные»
 
-    return transfers_and_cash_list
+    expenses_dict = {
+        "total_amount" : abs(float(total_expenses)),
+        "main" : main_expenses_in_categories,
+        "transfers_and_cash" : transfers_and_cash_list
+    }
+    return expenses_dict
 
-
-print(get_expenses(path))
+# def get_incoming_operations(path_to_file: str) -> str:
+#     pass
