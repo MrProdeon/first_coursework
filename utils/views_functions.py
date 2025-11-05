@@ -86,7 +86,7 @@ def user_setting_reader(path_to_file: str) -> dict:
     return readed_file
 
 
-def get_info_about_card(dataframe_with_operations: pd.DataFrame, date_start : datetime.datetime | None) -> list[dict]:
+def get_info_about_card(dataframe_with_operations: pd.DataFrame) -> list[dict]:
     """Функция для преобразования данных из датафрейма в информацию о номерах карт,
     общей сумме покупок по определенной карте и кэшбэка по определенной карте.
     Вернет список словарей, где каждый словарь - описанные выше данные
@@ -94,7 +94,7 @@ def get_info_about_card(dataframe_with_operations: pd.DataFrame, date_start : da
     try:
 
         dataframe_with_operations = dataframe_with_operations[
-            (dataframe_with_operations["Сумма операции"] < 0) & (dataframe_with_operations["Дата операции"] >= date_start)
+            dataframe_with_operations["Сумма операции"] < 0
         ]
         grouped_by_card = (
             dataframe_with_operations.groupby("Номер карты")
@@ -121,7 +121,7 @@ def get_info_about_card(dataframe_with_operations: pd.DataFrame, date_start : da
 def get_top_5_transactions(dataframe_with_operations: pd.DataFrame) -> list:
     try:
         dataframe_with_operations = dataframe_with_operations[
-            (dataframe_with_operations["Сумма операции"] < 0) & (dataframe_with_operations["Дата операции"] >= date_start)
+            dataframe_with_operations["Сумма операции"] < 0
         ]
         sorted_by_sum = dataframe_with_operations.sort_values(
             by="Сумма операции", ascending=True

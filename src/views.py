@@ -13,7 +13,6 @@ path = r"..\data\operations.xlsx"
 def main_page(date_string: str) -> str:
 
     date_object = create_datetime_object(date_string)
-    date_start = date_object.replace(day=1, hour=0, minute=0, second=0)
     if date_object is None:
         raise ValueError(f"Невозможно преобразовать строку '{date_string}' в дату")
     greeting = get_time_of_day_greeting(date_object)
