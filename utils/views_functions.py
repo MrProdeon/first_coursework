@@ -207,7 +207,7 @@ def get_stocks_price() -> list | None:
 ##############
 
 
-def get_expenses(path_to_file: str, date_range : str) -> dict:
+def get_expenses(path_to_file: str) -> dict:
     operations = operations_reader(path_to_file)
 
     expenses = operations[operations["Сумма операции"] < 0].copy()
