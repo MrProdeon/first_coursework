@@ -37,10 +37,9 @@ def main_page(date_sting: str) -> str:
 
     return json.dumps(json_result, indent=4, ensure_ascii=False)
 
-print(main_page("2025-01-01 00:00:00"))
 
 def events_page(date_string : str, date_range : str = "M") -> str:
-    date_end = create_datetime_object(date_string)
+    date_object = create_datetime_object(date_string)
 
     if date_range == "W":
         date_start = date_object - datetime.timedelta(days=date_object.weekday())
@@ -51,3 +50,16 @@ def events_page(date_string : str, date_range : str = "M") -> str:
     elif date_range == "ALL":
         date_start = None
 
+    expenses = get_expenses(path, date_start, date_object)
+    incoming = get_incoming_operations(path, date_start, date_object)
+    currency_rate = get_currency_rate()
+    stocks_price = get_stocks_price()
+
+    json_result = {
+        "expenses" : expenses,
+        "income" : incoming,
+        "currency_rates" : currency_rate,
+        "stocks_prices" : stocks_price
+    }
+
+    return json.dumps(json_result, indent=4, ensure_ascii=False)

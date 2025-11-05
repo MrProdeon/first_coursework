@@ -207,8 +207,18 @@ def get_stocks_price() -> list | None:
 ##############
 
 
-def get_expenses(path_to_file: str) -> dict:
+def get_expenses(path_to_file: str, date_start : datetime.datetime, date_end : datetime.datetime) -> dict:
     operations = operations_reader(path_to_file)
+
+    operations["Дата операции"] = pd.to_datetime(operations["Дата операции"], dayfirst=True)
+
+    if date_start is not None:
+        operations = operations[(operations["Дата операции"] >= date_start) &
+                                (operations["Дата операции"] <= date_end)]
+    else:
+        operations = operations[operations["Дата операции"] <= date_end]
+
+
 
     expenses = operations[operations["Сумма операции"] < 0].copy()
     expenses["abs_sum"] = expenses["Сумма операции"].abs()
@@ -249,19 +259,27 @@ def get_expenses(path_to_file: str) -> dict:
     }
     return expenses_dict
 
-def get_incoming_operations(path_to_file: str) -> dict:
+def get_incoming_operations(path_to_file: str, date_start : datetime.datetime, date_end : datetime.datetime) -> dict:
     operations = operations_reader(path_to_file)
+
+    operations["Дата операции"] = pd.to_datetime(operations["Дата операции"], dayfirst=True)
+
+    if date_start is not None:
+        operations = operations[(operations["Дата операции"] >= date_start) &
+                                (operations["Дата операции"] <= date_end)]
+    else:
+        operations = operations[operations["Дата операции"] <= date_end]
 
     incoming = operations[operations["Сумма операции"] > 0]
 
-    total_incoming = incoming["Сумма операции"].sum()
+    total_incoming = int(incoming["Сумма операции"].sum())
 
     main_incoming = (incoming.groupby("Категория", as_index=False).
                      agg({"Сумма операции" : "sum"}).
                      sort_values(by="Сумма операции",
                      ascending=False))
 
-    main_incoming = [{row["Категория"]: int(row["Сумма операции"])} for index, row in main_incoming.iterrows()]
+    main_incoming = [{"category" : row["Категория"], "amount" : int(row["Сумма операции"])} for index, row in main_incoming.iterrows()]
 
     incoming_dict = {
         "total_amount" : total_incoming,
