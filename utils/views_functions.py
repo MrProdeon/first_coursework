@@ -269,5 +269,3 @@ def get_incoming_operations(path_to_file: str) -> dict:
     }
 
     return incoming_dict
-
-print(get_expenses(path))
