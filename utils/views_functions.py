@@ -2,11 +2,11 @@ import datetime
 import json
 import logging
 import os
+from typing import Any
 
 import pandas as pd
 import requests
 from dotenv import load_dotenv
-from collections import Counter
 
 logger = logging.getLogger(__name__)
 file_handler = logging.FileHandler("../logs/main_page.log", encoding="UTF-8", mode="a")
@@ -207,24 +207,27 @@ def get_stocks_price() -> list | None:
 ##############
 
 
-def get_expenses(path_to_file: str, date_start : datetime.datetime, date_end : datetime.datetime) -> dict:
+def get_expenses(
+    path_to_file: str, date_start: datetime.datetime | None, date_end: datetime.datetime | None
+) -> dict:
     operations = operations_reader(path_to_file)
 
-    operations["Дата операции"] = pd.to_datetime(operations["Дата операции"], dayfirst=True)
+    operations["Дата операции"] = pd.to_datetime(
+        operations["Дата операции"], dayfirst=True
+    )
 
     if date_start is not None:
-        operations = operations[(operations["Дата операции"] >= date_start) &
-                                (operations["Дата операции"] <= date_end)]
+        operations = operations[
+            (operations["Дата операции"] >= date_start)
+            & (operations["Дата операции"] <= date_end)
+        ]
     else:
         operations = operations[operations["Дата операции"] <= date_end]
-
-
 
     expenses = operations[operations["Сумма операции"] < 0].copy()
     expenses["abs_sum"] = expenses["Сумма операции"].abs()
 
-    total_expenses = expenses["abs_sum"].sum() # Общая сумма расходов.
-
+    total_expenses = expenses["abs_sum"].sum()  # Общая сумма расходов.
 
     grouped_by_categories = (
         expenses.groupby(by="Категория", as_index=False)
@@ -234,39 +237,45 @@ def get_expenses(path_to_file: str, date_start : datetime.datetime, date_end : d
     main_expenses_in_categories = [
         {"category": row["Категория"], "amount": int(row["abs_sum"])}
         for index, row in grouped_by_categories.head(7).iterrows()
-    ] # Раздел «Основные»
+    ]  # Раздел «Основные»
 
     other_expenses = [
-        int(row["abs_sum"])
-        for index, row in grouped_by_categories.iloc[7:].iterrows()
+        int(row["abs_sum"]) for index, row in grouped_by_categories.iloc[7:].iterrows()
     ]
 
     transfers_and_cash = (
         expenses.loc[expenses["Категория"].isin(["Переводы", "Наличные"])]
-        .groupby("Категория", as_index=False)["abs_sum"]
-        .sum()
+        .groupby("Категория", as_index=False)
+        .agg({"abs_sum": "sum"})
     ).sort_values(by="abs_sum", ascending=False)
     transfers_and_cash_list = [
         {"category": row["Категория"], "amount": int(row["abs_sum"])}
         for index, row in transfers_and_cash.iterrows()
-    ] # Раздел «Переводы и наличные»
+    ]  # Раздел «Переводы и наличные»
 
     expenses_dict = {
-        "total_amount" : int(total_expenses),
-        "main" : main_expenses_in_categories,
+        "total_amount": int(total_expenses),
+        "main": main_expenses_in_categories,
         "other": sum(other_expenses) if len(other_expenses) > 0 else "-",
-        "transfers_and_cash" : transfers_and_cash_list,
+        "transfers_and_cash": transfers_and_cash_list,
     }
     return expenses_dict
 
-def get_incoming_operations(path_to_file: str, date_start : datetime.datetime, date_end : datetime.datetime) -> dict:
+
+def get_incoming_operations(
+    path_to_file: str, date_start: datetime.datetime | None, date_end: datetime.datetime | None
+) -> dict:
     operations = operations_reader(path_to_file)
 
-    operations["Дата операции"] = pd.to_datetime(operations["Дата операции"], dayfirst=True)
+    operations["Дата операции"] = pd.to_datetime(
+        operations["Дата операции"], dayfirst=True
+    )
 
     if date_start is not None:
-        operations = operations[(operations["Дата операции"] >= date_start) &
-                                (operations["Дата операции"] <= date_end)]
+        operations = operations[
+            (operations["Дата операции"] >= date_start)
+            & (operations["Дата операции"] <= date_end)
+        ]
     else:
         operations = operations[operations["Дата операции"] <= date_end]
 
@@ -274,16 +283,17 @@ def get_incoming_operations(path_to_file: str, date_start : datetime.datetime, d
 
     total_incoming = int(incoming["Сумма операции"].sum())
 
-    main_incoming = (incoming.groupby("Категория", as_index=False).
-                     agg({"Сумма операции" : "sum"}).
-                     sort_values(by="Сумма операции",
-                     ascending=False))
+    main_incoming = (
+        incoming.groupby("Категория", as_index=False)
+        .agg({"Сумма операции": "sum"})
+        .sort_values(by="Сумма операции", ascending=False)
+    )
 
-    main_incoming = [{"category" : row["Категория"], "amount" : int(row["Сумма операции"])} for index, row in main_incoming.iterrows()]
+    main_incoming_list : list[dict[str, int]] = [
+        {"category": row["Категория"], "amount": int(row["Сумма операции"])}
+        for index, row in main_incoming.iterrows()
+    ]
 
-    incoming_dict = {
-        "total_amount" : total_incoming,
-        "main" : main_incoming
-    }
+    incoming_dict = {"total_amount": total_incoming, "main": main_incoming_list}
 
     return incoming_dict
