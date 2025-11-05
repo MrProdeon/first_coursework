@@ -207,41 +207,67 @@ def get_stocks_price() -> list | None:
 ##############
 
 
-def get_expenses(path_to_file: str) -> str:
+def get_expenses(path_to_file: str, date_range : str) -> dict:
     operations = operations_reader(path_to_file)
 
-    expenses = operations[operations["Сумма операции"] < 0]
+    expenses = operations[operations["Сумма операции"] < 0].copy()
+    expenses["abs_sum"] = expenses["Сумма операции"].abs()
 
-    total_expenses = expenses["Сумма операции"].sum() # Общая сумма расходов.
+    total_expenses = expenses["abs_sum"].sum() # Общая сумма расходов.
 
 
     grouped_by_categories = (
         expenses.groupby(by="Категория", as_index=False)
-        .agg({"Сумма операции": "sum"})
-        .sort_values(by="Сумма операции", ascending=True)
-        .head(7)
+        .agg({"abs_sum": "sum"})
+        .sort_values(by="abs_sum", ascending=False)
     )
     main_expenses_in_categories = [
-        {"category": row["Категория"], "amount": abs(row["Сумма операции"])}
-        for index, row in grouped_by_categories.iterrows()
+        {"category": row["Категория"], "amount": int(row["abs_sum"])}
+        for index, row in grouped_by_categories.head(7).iterrows()
     ] # Раздел «Основные»
+
+    other_expenses = [
+        int(row["abs_sum"])
+        for index, row in grouped_by_categories.iloc[7:].iterrows()
+    ]
 
     transfers_and_cash = (
         expenses.loc[expenses["Категория"].isin(["Переводы", "Наличные"])]
-        .groupby("Категория", as_index=False)["Сумма операции"]
+        .groupby("Категория", as_index=False)["abs_sum"]
         .sum()
-    ).sort_values(by="Сумма операции", ascending=True)
+    ).sort_values(by="abs_sum", ascending=False)
     transfers_and_cash_list = [
-        {"category": row["Категория"], "amount": abs(row["Сумма операции"])}
+        {"category": row["Категория"], "amount": int(row["abs_sum"])}
         for index, row in transfers_and_cash.iterrows()
     ] # Раздел «Переводы и наличные»
 
     expenses_dict = {
-        "total_amount" : abs(float(total_expenses)),
+        "total_amount" : int(total_expenses),
         "main" : main_expenses_in_categories,
-        "transfers_and_cash" : transfers_and_cash_list
+        "other": sum(other_expenses) if len(other_expenses) > 0 else "-",
+        "transfers_and_cash" : transfers_and_cash_list,
     }
     return expenses_dict
 
-# def get_incoming_operations(path_to_file: str) -> str:
-#     pass
+def get_incoming_operations(path_to_file: str) -> dict:
+    operations = operations_reader(path_to_file)
+
+    incoming = operations[operations["Сумма операции"] > 0]
+
+    total_incoming = incoming["Сумма операции"].sum()
+
+    main_incoming = (incoming.groupby("Категория", as_index=False).
+                     agg({"Сумма операции" : "sum"}).
+                     sort_values(by="Сумма операции",
+                     ascending=False))
+
+    main_incoming = [{row["Категория"]: int(row["Сумма операции"])} for index, row in main_incoming.iterrows()]
+
+    incoming_dict = {
+        "total_amount" : total_incoming,
+        "main" : main_incoming
+    }
+
+    return incoming_dict
+
+print(get_expenses(path))
