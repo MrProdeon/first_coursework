@@ -1,3 +1,4 @@
+import datetime
 import json
 
 from utils.views_functions import (create_datetime_object,
@@ -5,7 +6,10 @@ from utils.views_functions import (create_datetime_object,
                                    get_stocks_price,
                                    get_time_of_day_greeting,
                                    get_top_5_transactions,
-                                   operations_reader)
+                                   operations_reader,
+                                   get_expenses,
+                                   get_incoming_operations,
+                                   )
 
 path = r"..\data\operations.xlsx"
 
@@ -35,5 +39,15 @@ def main_page(date_sting: str) -> str:
 
 print(main_page("2025-01-01 00:00:00"))
 
-# def events_page(date_string : str, date_range : str = "M") -> str:
-#     pass
+def events_page(date_string : str, date_range : str = "M") -> str:
+    date_end = create_datetime_object(date_string)
+
+    if date_range == "W":
+        date_start = date_object - datetime.timedelta(days=date_object.weekday())
+    elif date_range == "M":
+        date_start = date_object.replace(day=1, hour=0, minute=0, second=0)
+    elif date_range == "Y":
+        date_start = date_object.replace(month=1, day=1,  hour=0, minute=0, second=0)
+    elif date_range == "ALL":
+        date_start = None
+
