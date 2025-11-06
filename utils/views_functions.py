@@ -237,49 +237,58 @@ def get_expenses(path_to_file: str, date_start: datetime.datetime | None, date_e
 
     Соединяет всю эту информацию и возвращает словарь, для дальнейшего формирования JSON.
     """
-    operations = operations_reader(path_to_file)
+    try:
+        logger.info("Начало работы функции")
+        operations = operations_reader(path_to_file)
 
-    operations["Дата операции"] = pd.to_datetime(operations["Дата операции"], dayfirst=True)
+        operations["Дата операции"] = pd.to_datetime(operations["Дата операции"], dayfirst=True)
 
-    if date_start is not None:
-        operations = operations[
-            (operations["Дата операции"] >= date_start) & (operations["Дата операции"] <= date_end)
+        if date_start is not None:
+            operations = operations[
+                (operations["Дата операции"] >= date_start) & (operations["Дата операции"] <= date_end)
+            ]
+        else:
+            operations = operations[operations["Дата операции"] <= date_end]
+
+        expenses = operations[operations["Сумма операции"] < 0].copy()
+        expenses["abs_sum"] = expenses["Сумма операции"].abs()
+
+        total_expenses = expenses["abs_sum"].sum()
+        logger.info("Получена общая сумма расходов")
+
+        grouped_by_categories = (
+            expenses.groupby(by="Категория", as_index=False)
+            .agg({"abs_sum": "sum"})
+            .sort_values(by="abs_sum", ascending=False)
+        )
+        main_expenses_in_categories = [
+            {"category": row["Категория"], "amount": int(row["abs_sum"])}
+            for index, row in grouped_by_categories.head(7).iterrows()
+        ]  # Раздел «Основные»
+        logger.info("Получен раздел основное")
+
+        other_expenses = [int(row["abs_sum"]) for index, row in grouped_by_categories.iloc[7:].iterrows()]
+
+        transfers_and_cash = (
+            expenses.loc[expenses["Категория"].isin(["Переводы", "Наличные"])]
+            .groupby("Категория", as_index=False)
+            .agg({"abs_sum": "sum"})
+        ).sort_values(by="abs_sum", ascending=False)
+        transfers_and_cash_list = [
+            {"category": row["Категория"], "amount": int(row["abs_sum"])}
+            for index, row in transfers_and_cash.iterrows()
         ]
-    else:
-        operations = operations[operations["Дата операции"] <= date_end]
+        logger.info("Получен раздел переводы и наличные")
 
-    expenses = operations[operations["Сумма операции"] < 0].copy()
-    expenses["abs_sum"] = expenses["Сумма операции"].abs()
-
-    total_expenses = expenses["abs_sum"].sum()  # Общая сумма расходов.
-
-    grouped_by_categories = (
-        expenses.groupby(by="Категория", as_index=False)
-        .agg({"abs_sum": "sum"})
-        .sort_values(by="abs_sum", ascending=False)
-    )
-    main_expenses_in_categories = [
-        {"category": row["Категория"], "amount": int(row["abs_sum"])}
-        for index, row in grouped_by_categories.head(7).iterrows()
-    ]  # Раздел «Основные»
-
-    other_expenses = [int(row["abs_sum"]) for index, row in grouped_by_categories.iloc[7:].iterrows()]
-
-    transfers_and_cash = (
-        expenses.loc[expenses["Категория"].isin(["Переводы", "Наличные"])]
-        .groupby("Категория", as_index=False)
-        .agg({"abs_sum": "sum"})
-    ).sort_values(by="abs_sum", ascending=False)
-    transfers_and_cash_list = [
-        {"category": row["Категория"], "amount": int(row["abs_sum"])} for index, row in transfers_and_cash.iterrows()
-    ]  # Раздел «Переводы и наличные»
-
-    expenses_dict = {
-        "total_amount": int(total_expenses),
-        "main": main_expenses_in_categories,
-        "other": sum(other_expenses) if len(other_expenses) > 0 else "-",
-        "transfers_and_cash": transfers_and_cash_list,
-    }
+        expenses_dict = {
+            "total_amount": int(total_expenses),
+            "main": main_expenses_in_categories,
+            "other": sum(other_expenses) if len(other_expenses) > 0 else "-",
+            "transfers_and_cash": transfers_and_cash_list,
+        }
+        logger.info("Функция отработала успешно, сформирован словарь")
+    except Exception as error:
+        logger.error(f"Произошла ошибка {error}")
     return expenses_dict
 
 
@@ -294,31 +303,38 @@ def get_incoming_operations(
 
     Возвращает словарь, который в основной функции будет использован для формирования JSON.
     """
-    operations = operations_reader(path_to_file)
+    try:
+        logger.info("Начало работы функции")
+        operations = operations_reader(path_to_file)
 
-    operations["Дата операции"] = pd.to_datetime(operations["Дата операции"], dayfirst=True)
+        operations["Дата операции"] = pd.to_datetime(operations["Дата операции"], dayfirst=True)
 
-    if date_start is not None:
-        operations = operations[
-            (operations["Дата операции"] >= date_start) & (operations["Дата операции"] <= date_end)
+        if date_start is not None:
+            operations = operations[
+                (operations["Дата операции"] >= date_start) & (operations["Дата операции"] <= date_end)
+            ]
+        else:
+            operations = operations[operations["Дата операции"] <= date_end]
+
+        incoming = operations[operations["Сумма операции"] > 0]
+
+        total_incoming = int(incoming["Сумма операции"].sum())
+        logger.info("Получена общая сумма поступлений")
+
+        main_incoming = (
+            incoming.groupby("Категория", as_index=False)
+            .agg({"Сумма операции": "sum"})
+            .sort_values(by="Сумма операции", ascending=False)
+        )
+
+        main_incoming_list: list[dict[str, int]] = [
+            {"category": row["Категория"], "amount": int(row["Сумма операции"])}
+            for index, row in main_incoming.iterrows()
         ]
-    else:
-        operations = operations[operations["Дата операции"] <= date_end]
+        logger.info("Получен раздел основное с разделением постулений по категориям по убыванию")
 
-    incoming = operations[operations["Сумма операции"] > 0]
-
-    total_incoming = int(incoming["Сумма операции"].sum())
-
-    main_incoming = (
-        incoming.groupby("Категория", as_index=False)
-        .agg({"Сумма операции": "sum"})
-        .sort_values(by="Сумма операции", ascending=False)
-    )
-
-    main_incoming_list: list[dict[str, int]] = [
-        {"category": row["Категория"], "amount": int(row["Сумма операции"])} for index, row in main_incoming.iterrows()
-    ]
-
-    incoming_dict = {"total_amount": total_incoming, "main": main_incoming_list}
-
+        incoming_dict = {"total_amount": total_incoming, "main": main_incoming_list}
+        logger.info('Функция успешно завершила свою работу. Сформирован словарь поступлений.')
+    except Exception as error:
+        logger.error(f"Произошла ошибка {error}")
     return incoming_dict
