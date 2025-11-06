@@ -86,12 +86,20 @@ def user_setting_reader(path_to_file: str) -> dict:
     return readed_file
 
 
-def get_info_about_card(dataframe_with_operations: pd.DataFrame) -> list[dict]:
+def get_info_about_card(dataframe_with_operations: pd.DataFrame, date_object : datetime.datetime) -> list[dict]:
     """Функция для преобразования данных из датафрейма в информацию о номерах карт,
     общей сумме покупок по определенной карте и кэшбэка по определенной карте.
     Вернет список словарей, где каждый словарь - описанные выше данные
     """
+    date_start = date_object.replace(day=1, hour=0, minute=0, second=0)
+
     try:
+
+        dataframe_with_operations["Дата операции"] = pd.to_datetime(dataframe_with_operations["Дата операции"],
+                                                                    dayfirst=True)
+
+        dataframe_with_operations = dataframe_with_operations[(dataframe_with_operations["Дата операции"] >= date_start)
+        & (dataframe_with_operations["Дата операции"] <= date_object)]
 
         dataframe_with_operations = dataframe_with_operations[
             dataframe_with_operations["Сумма операции"] < 0
@@ -118,8 +126,22 @@ def get_info_about_card(dataframe_with_operations: pd.DataFrame) -> list[dict]:
     return grouped_by_card.to_dict(orient="records")
 
 
-def get_top_5_transactions(dataframe_with_operations: pd.DataFrame) -> list:
+def get_top_5_transactions(dataframe_with_operations: pd.DataFrame, date_object : datetime.datetime) -> list:
+    """Функция для получения 5 самых больших транзакций из датафрейма.
+    Принимает датафрейм и дату, до которой будет происходить поиск в этом месяце.
+    Вернет список словарей, который будет использоваться в главной функции для формирования JSON-объекта.
+    """
+    date_start = date_object.replace(day=1, hour=0, minute=0, second=0)
+
+
     try:
+
+        dataframe_with_operations["Дата операции"] = pd.to_datetime(dataframe_with_operations["Дата операции"],
+                                                                    dayfirst=True)
+
+        dataframe_with_operations = dataframe_with_operations[(dataframe_with_operations["Дата операции"] >= date_start)
+        & (dataframe_with_operations["Дата операции"] <= date_object)]
+
         dataframe_with_operations = dataframe_with_operations[
             dataframe_with_operations["Сумма операции"] < 0
         ]
@@ -153,6 +175,9 @@ def get_top_5_transactions(dataframe_with_operations: pd.DataFrame) -> list:
 
 
 def get_currency_rate() -> list | None:
+    """Функция для получения курса валют.
+    Получает курс только тех валют, которые указаны в файле user_setting.json
+    Вернет список словарей, в котором каждый словарь - название валюты и её курс."""
     url = "https://www.cbr-xml-daily.ru/daily_json.js"
     try:
         logger.info("Начало работы функции")
@@ -180,6 +205,9 @@ def get_currency_rate() -> list | None:
 
 
 def get_stocks_price() -> list | None:
+    """Функция для получения цен акций.
+    Получает цены только тех акций, которые указаны в файле user_setting.json
+    Вернет список словарей, в котором каждый словарь - название акции и её стоимость"""
     headers = {"X-Api-Key": APIKEY}
     try:
         stocks_price_list: list[dict[str, float]] = []
@@ -210,6 +238,18 @@ def get_stocks_price() -> list | None:
 def get_expenses(
     path_to_file: str, date_start: datetime.datetime | None, date_end: datetime.datetime | None
 ) -> dict:
+    """Функция для получения информации о расходах в указанном датафрейме.
+    На вход получает путь до excel файла с информацией об операциях, дату начала для анализа информации
+    и дату конца для анализа информации из датафрейма.
+
+    Формирует информацию по разделам:
+    1) Об общей стоимость расходов
+    2) О 7 наиболее затратных категориях
+    3) Если категорий больше 7, то всё что дальше седьмой, суммируется и формируется раздел "Другое"
+    4) Переводы и наличные, отсортированные по убыванию
+
+    Соединяет всю эту информацию и возвращает словарь, для дальнейшего формирования JSON.
+    """
     operations = operations_reader(path_to_file)
 
     operations["Дата операции"] = pd.to_datetime(
@@ -265,6 +305,14 @@ def get_expenses(
 def get_incoming_operations(
     path_to_file: str, date_start: datetime.datetime | None, date_end: datetime.datetime | None
 ) -> dict:
+    """Функция для получения информации о поступлениях в датафрейме.
+    Принимает на вход путь до датафрейма, дату начала анализа и дату конца анализа.
+
+    Формирует информацию об общей сумме поступлений и раздел "Основное", в котором сумма
+    по категориям "Наличные" и "Переводы" отсортирована по убыванию.
+
+    Возвращает словарь, который в основной функции будет использован для формирования JSON.
+    """
     operations = operations_reader(path_to_file)
 
     operations["Дата операции"] = pd.to_datetime(
