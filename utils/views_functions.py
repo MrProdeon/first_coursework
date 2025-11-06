@@ -10,9 +10,7 @@ from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 file_handler = logging.FileHandler("../logs/main_page.log", encoding="UTF-8", mode="a")
-file_formatter = logging.Formatter(
-    "%(asctime)s %(message)s %(funcName)s %(filename)s %(lineno)s"
-)
+file_formatter = logging.Formatter("%(asctime)s %(message)s %(funcName)s %(filename)s %(lineno)s")
 file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
 logger.setLevel(logging.DEBUG)
@@ -31,9 +29,7 @@ def create_datetime_object(date_str: str) -> datetime.datetime | None:
     logger.info("Начало работы функции create_datetime_object")
     try:
         date_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
-        logger.info(
-            "Конец работы функции create_datetime_object, успешное форматирование даты"
-        )
+        logger.info("Конец работы функции create_datetime_object, успешное форматирование даты")
         return date_obj
     except Exception as error:
         logger.error(f"В функции create_datetime_object произошла ошибка {error}")
@@ -72,7 +68,7 @@ def operations_reader(path_to_file: str) -> pd.DataFrame:
     return file
 
 
-def user_setting_reader(path_to_file: str) -> dict:
+def user_setting_reader(path_to_file: str) -> dict | Any:
     """Функция для чтения пользовательских настроек из json-файла, в котором есть список словарей"""
     logger.info(f"Начало чтения файла {path_to_file}")
     try:
@@ -86,7 +82,7 @@ def user_setting_reader(path_to_file: str) -> dict:
     return readed_file
 
 
-def get_info_about_card(dataframe_with_operations: pd.DataFrame, date_object : datetime.datetime) -> list[dict]:
+def get_info_about_card(dataframe_with_operations: pd.DataFrame, date_object: datetime.datetime) -> list[dict]:
     """Функция для преобразования данных из датафрейма в информацию о номерах карт,
     общей сумме покупок по определенной карте и кэшбэка по определенной карте.
     Вернет список словарей, где каждый словарь - описанные выше данные
@@ -95,20 +91,17 @@ def get_info_about_card(dataframe_with_operations: pd.DataFrame, date_object : d
 
     try:
 
-        dataframe_with_operations["Дата операции"] = pd.to_datetime(dataframe_with_operations["Дата операции"],
-                                                                    dayfirst=True)
-
-        dataframe_with_operations = dataframe_with_operations[(dataframe_with_operations["Дата операции"] >= date_start)
-        & (dataframe_with_operations["Дата операции"] <= date_object)]
+        dataframe_with_operations["Дата операции"] = pd.to_datetime(
+            dataframe_with_operations["Дата операции"], dayfirst=True
+        )
 
         dataframe_with_operations = dataframe_with_operations[
-            dataframe_with_operations["Сумма операции"] < 0
+            (dataframe_with_operations["Дата операции"] >= date_start)
+            & (dataframe_with_operations["Дата операции"] <= date_object)
         ]
-        grouped_by_card = (
-            dataframe_with_operations.groupby("Номер карты")
-            .agg({"Сумма операции": "sum"})
-            .abs()
-        )
+
+        dataframe_with_operations = dataframe_with_operations[dataframe_with_operations["Сумма операции"] < 0]
+        grouped_by_card = dataframe_with_operations.groupby("Номер карты").agg({"Сумма операции": "sum"}).abs()
         grouped_by_card["Кэшбэк"] = grouped_by_card["Сумма операции"].abs() * 0.01
         grouped_by_card["Кэшбэк"] = grouped_by_card["Кэшбэк"].round(2)
         grouped_by_card.reset_index(inplace=True)
@@ -126,28 +119,26 @@ def get_info_about_card(dataframe_with_operations: pd.DataFrame, date_object : d
     return grouped_by_card.to_dict(orient="records")
 
 
-def get_top_5_transactions(dataframe_with_operations: pd.DataFrame, date_object : datetime.datetime) -> list:
+def get_top_5_transactions(dataframe_with_operations: pd.DataFrame, date_object: datetime.datetime) -> list:
     """Функция для получения 5 самых больших транзакций из датафрейма.
     Принимает датафрейм и дату, до которой будет происходить поиск в этом месяце.
     Вернет список словарей, который будет использоваться в главной функции для формирования JSON-объекта.
     """
     date_start = date_object.replace(day=1, hour=0, minute=0, second=0)
 
-
     try:
 
-        dataframe_with_operations["Дата операции"] = pd.to_datetime(dataframe_with_operations["Дата операции"],
-                                                                    dayfirst=True)
-
-        dataframe_with_operations = dataframe_with_operations[(dataframe_with_operations["Дата операции"] >= date_start)
-        & (dataframe_with_operations["Дата операции"] <= date_object)]
+        dataframe_with_operations["Дата операции"] = pd.to_datetime(
+            dataframe_with_operations["Дата операции"], dayfirst=True
+        )
 
         dataframe_with_operations = dataframe_with_operations[
-            dataframe_with_operations["Сумма операции"] < 0
+            (dataframe_with_operations["Дата операции"] >= date_start)
+            & (dataframe_with_operations["Дата операции"] <= date_object)
         ]
-        sorted_by_sum = dataframe_with_operations.sort_values(
-            by="Сумма операции", ascending=True
-        ).head()
+
+        dataframe_with_operations = dataframe_with_operations[dataframe_with_operations["Сумма операции"] < 0]
+        sorted_by_sum = dataframe_with_operations.sort_values(by="Сумма операции", ascending=True).head()
         sorted_by_sum.rename(
             columns={
                 "Дата операции": "date",
@@ -190,9 +181,7 @@ def get_currency_rate() -> list | None:
             for currency in user_setting_reader(user_setting_path)["user_currencies"]
         }
 
-        currency_rate_list = [
-            {"currency": k, "rate": v} for k, v in currency_rate.items()
-        ]
+        currency_rate_list = [{"currency": k, "rate": v} for k, v in currency_rate.items()]
         return currency_rate_list
     except requests.exceptions.HTTPError as error:
         logger.error(f"Произошла ошибка {error}")
@@ -235,9 +224,7 @@ def get_stocks_price() -> list | None:
 ##############
 
 
-def get_expenses(
-    path_to_file: str, date_start: datetime.datetime | None, date_end: datetime.datetime | None
-) -> dict:
+def get_expenses(path_to_file: str, date_start: datetime.datetime | None, date_end: datetime.datetime | None) -> dict:
     """Функция для получения информации о расходах в указанном датафрейме.
     На вход получает путь до excel файла с информацией об операциях, дату начала для анализа информации
     и дату конца для анализа информации из датафрейма.
@@ -252,14 +239,11 @@ def get_expenses(
     """
     operations = operations_reader(path_to_file)
 
-    operations["Дата операции"] = pd.to_datetime(
-        operations["Дата операции"], dayfirst=True
-    )
+    operations["Дата операции"] = pd.to_datetime(operations["Дата операции"], dayfirst=True)
 
     if date_start is not None:
         operations = operations[
-            (operations["Дата операции"] >= date_start)
-            & (operations["Дата операции"] <= date_end)
+            (operations["Дата операции"] >= date_start) & (operations["Дата операции"] <= date_end)
         ]
     else:
         operations = operations[operations["Дата операции"] <= date_end]
@@ -279,9 +263,7 @@ def get_expenses(
         for index, row in grouped_by_categories.head(7).iterrows()
     ]  # Раздел «Основные»
 
-    other_expenses = [
-        int(row["abs_sum"]) for index, row in grouped_by_categories.iloc[7:].iterrows()
-    ]
+    other_expenses = [int(row["abs_sum"]) for index, row in grouped_by_categories.iloc[7:].iterrows()]
 
     transfers_and_cash = (
         expenses.loc[expenses["Категория"].isin(["Переводы", "Наличные"])]
@@ -289,8 +271,7 @@ def get_expenses(
         .agg({"abs_sum": "sum"})
     ).sort_values(by="abs_sum", ascending=False)
     transfers_and_cash_list = [
-        {"category": row["Категория"], "amount": int(row["abs_sum"])}
-        for index, row in transfers_and_cash.iterrows()
+        {"category": row["Категория"], "amount": int(row["abs_sum"])} for index, row in transfers_and_cash.iterrows()
     ]  # Раздел «Переводы и наличные»
 
     expenses_dict = {
@@ -315,14 +296,11 @@ def get_incoming_operations(
     """
     operations = operations_reader(path_to_file)
 
-    operations["Дата операции"] = pd.to_datetime(
-        operations["Дата операции"], dayfirst=True
-    )
+    operations["Дата операции"] = pd.to_datetime(operations["Дата операции"], dayfirst=True)
 
     if date_start is not None:
         operations = operations[
-            (operations["Дата операции"] >= date_start)
-            & (operations["Дата операции"] <= date_end)
+            (operations["Дата операции"] >= date_start) & (operations["Дата операции"] <= date_end)
         ]
     else:
         operations = operations[operations["Дата операции"] <= date_end]
@@ -337,9 +315,8 @@ def get_incoming_operations(
         .sort_values(by="Сумма операции", ascending=False)
     )
 
-    main_incoming_list : list[dict[str, int]] = [
-        {"category": row["Категория"], "amount": int(row["Сумма операции"])}
-        for index, row in main_incoming.iterrows()
+    main_incoming_list: list[dict[str, int]] = [
+        {"category": row["Категория"], "amount": int(row["Сумма операции"])} for index, row in main_incoming.iterrows()
     ]
 
     incoming_dict = {"total_amount": total_incoming, "main": main_incoming_list}

@@ -1,11 +1,17 @@
 import datetime
 import json
 
-from utils.views_functions import (create_datetime_object, get_currency_rate,
-                                   get_expenses, get_incoming_operations,
-                                   get_info_about_card, get_stocks_price,
-                                   get_time_of_day_greeting,
-                                   get_top_5_transactions, operations_reader)
+from utils.views_functions import (
+    create_datetime_object,
+    get_currency_rate,
+    get_expenses,
+    get_incoming_operations,
+    get_info_about_card,
+    get_stocks_price,
+    get_time_of_day_greeting,
+    get_top_5_transactions,
+    operations_reader,
+)
 
 path = r"..\data\operations.xlsx"
 
@@ -90,4 +96,3 @@ def events_page(date_string: str, date_range: str = "M") -> str:
     }
 
     return json.dumps(json_result, indent=4, ensure_ascii=False)
-
