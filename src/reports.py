@@ -2,10 +2,14 @@ from utils.views_functions import operations_reader, create_datetime_object
 import pandas as pd
 from typing import Optional
 
-def decorator_for_write_to_file(func):
-    def wrapper(*args, **kwargs):
-        pass
-    return wrapper
+def write_to_file(filename="report.xlsx"):
+    def get_report(func):
+        def wrapper(*args, **kwargs):
+            df : pd.DataFrame = func(*args, **kwargs)
+            df.to_excel(filename, index=False)
+            return df
+        return wrapper
+    return get_report
 
 df = operations_reader("../data/operations.xlsx")
 
@@ -63,6 +67,7 @@ def spending_by_weekday(transactions: pd.DataFrame,
     avg_amount_per_day = avg_amount_per_day.sort_values(by="Порядок").drop(columns="Порядок")
 
     return avg_amount_per_day
+
 
 def spending_by_workday(transactions: pd.DataFrame,
                         date: Optional[str] = None) -> pd.DataFrame:
