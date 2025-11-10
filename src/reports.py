@@ -1,9 +1,13 @@
 from utils.views_functions import operations_reader, create_datetime_object
 import pandas as pd
 from typing import Optional
+from functools import wraps
 
 def write_to_file(filename="report.xlsx"):
+    """Декоратор для записи отчета в файл. По умолчанию запись идет в report.xlsx,
+    но можно указать нужное название файла"""
     def get_report(func):
+        @wraps(func)
         def wrapper(*args, **kwargs):
             df : pd.DataFrame = func(*args, **kwargs)
             df.to_excel(filename, index=False)
@@ -15,6 +19,12 @@ df = operations_reader("../data/operations.xlsx")
 
 
 def get_correct_dataframe(transactions: pd.DataFrame,date: Optional[str] = None) -> pd.DataFrame:
+    """
+    Функция для фильтрации датафрейма.
+    :param transactions: Датафрейм, нуждающийся в фильтрации
+    :param date: Дата, до которой будет получен датафрейм. Получение идет за три месяца до этой даты.
+    :return: Отфильтрованный датафрейм с нужной датой и только с расходами
+    """
     transactions["Дата операции"] = pd.to_datetime(transactions["Дата операции"], dayfirst=True)
 
     if date is None:
@@ -33,6 +43,14 @@ def get_correct_dataframe(transactions: pd.DataFrame,date: Optional[str] = None)
 def spending_by_category(transactions: pd.DataFrame,
                          category: str,
                          date: Optional[str] = None) -> pd.DataFrame:
+    """
+    Функция для фильтрации датафрейма по указанной категории и дате за три месяца.
+    :param transactions: Датафрейм для фильтрации
+    :param category: Категория для поиска
+    :param date: Дата, до которой будет произведен поиск.
+    Анализируются транзакции за последние три месяца до этой даты.
+    :return: отфильтрованный датафрейм
+    """
 
     only_expenses = get_correct_dataframe(transactions, date)
 
@@ -43,6 +61,14 @@ def spending_by_category(transactions: pd.DataFrame,
 
 def spending_by_weekday(transactions: pd.DataFrame,
                         date: Optional[str] = None) -> pd.DataFrame:
+    """
+    Функция для поиска среднеарефмитических трат по дням недели за последние три месяца
+    до указанной даты. Если дата не указана - от сегодняшнего дня.
+    :param transactions: Датафрейм для фильтрации
+    :param date: Дата, до которой будет произведен поиск.
+    Анализируются транзакции за последние три месяца до этой даты.
+    :return: датафрейм с днями недели и средних трат за эти дни в течение 3 месяцев.
+    """
     only_expenses = get_correct_dataframe(transactions, date)
 
     only_expenses["День недели"] = only_expenses["Дата операции"].dt.weekday
@@ -71,6 +97,15 @@ def spending_by_weekday(transactions: pd.DataFrame,
 
 def spending_by_workday(transactions: pd.DataFrame,
                         date: Optional[str] = None) -> pd.DataFrame:
+    """
+    Функция для анализа среднеарефмитических трат по выходным и будним дням за последние три месяца
+    до указанной даты
+    :param transactions: Датафрейм для фильтрации
+    :param date: Дата, до которой будет произведен поиск.
+    Анализируются транзакции за последние три месяца до этой даты.
+    :return: датафрейм с информацией о средних тратах по выходным и будням за последние 3 месяца до
+    указанной даты. Если дата не указана - за последние 3 месяца от сегодняшнего дня.
+    """
     only_expenses = get_correct_dataframe(transactions, date)
 
     only_expenses["День недели"] = only_expenses["Дата операции"].dt.weekday
