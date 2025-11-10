@@ -41,7 +41,7 @@ def profitable_cashback(readed_file  : pd.DataFrame, year : str, month : str) ->
                          if row["Кэшбэк"] > 0}
     except Exception as error:
         logger.error(f"Произошла ошибка {error}")
-        return resulter_dict
+        return resulted_dict
     return json.dumps(resulted_dict,indent=4, ensure_ascii=False)
 
 
@@ -108,7 +108,7 @@ def remittance_search(transactions : list[dict[str,Any]]) -> str:
     result = []
     try:
         logger.info("Начало работы функции")
-        pattern = re.compile(r"^[А-Я][а-я]+\s+[А-Я]\.$")
+        pattern = re.compile(r"[А-Я][а-я]+\s+[А-Я]\.$")
         result = [dict_ for dict_ in transactions
                   if pattern.search(dict_["Описание"])
                   and re.search("Переводы", dict_["Категория"])
