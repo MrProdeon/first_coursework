@@ -9,10 +9,10 @@ import logging
 from typing import Any
 
 path = r"..\data\operations.xlsx"
-
+logs_path = os.path.join(os.path.dirname(__file__), "..", "logs", "services.log")
 logger = logging.getLogger(__name__)
 if not logger.handlers:
-    file_handler = logging.FileHandler("../logs/services.log", encoding="UTF-8", mode="a")
+    file_handler = logging.FileHandler(logs_path, encoding="UTF-8", mode="a")
     file_formatter = logging.Formatter("%(asctime)s %(message)s %(funcName)s %(filename)s %(lineno)s")
     file_handler.setFormatter(file_formatter)
     logger.addHandler(file_handler)

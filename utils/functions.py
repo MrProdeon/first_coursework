@@ -8,9 +8,11 @@ import pandas as pd
 import requests
 from dotenv import load_dotenv
 
+
+logs_path = os.path.join(os.path.dirname(__file__), "..", "logs", "functions.log")
 logger = logging.getLogger(__name__)
 if not logger.handlers:
-    file_handler = logging.FileHandler("../logs/functions.log", encoding="UTF-8", mode="a")
+    file_handler = logging.FileHandler(logs_path, encoding="UTF-8", mode="a")
     formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s (%(filename)s:%(lineno)d)")
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
