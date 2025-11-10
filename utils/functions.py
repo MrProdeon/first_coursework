@@ -42,8 +42,8 @@ def create_datetime_object(date_str: str) -> datetime.datetime | None:
 def get_time_of_day_greeting(date_object: datetime.datetime) -> str | None:
     """Функция для определения времени суток, использует часы в качестве определителя"""
     logger.info("Начало работы функции get_time_of_day_greeting")
-    hour = date_object.hour
     try:
+        hour = date_object.hour
         if 5 <= hour <= 11:
             logger.info("Функция get_time_of_day_greeting определила, что сейчас утро")
             return "Доброе утро"
