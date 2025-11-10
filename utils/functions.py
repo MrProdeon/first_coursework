@@ -68,6 +68,7 @@ def operations_reader(path_to_file: str) -> pd.DataFrame:
         file = pd.read_excel(path_to_file)
     except Exception as error:
         logger.error(f"В функции operations_reader произошла ошибка {error}")
+        return None
     return file
 
 
@@ -81,6 +82,7 @@ def user_setting_reader(path_to_file: str) -> dict | Any:
             logger.info("Файл успешно загружен в пайтон-объект")
     except Exception as error:
         logger.error(f"В функции user_setting_reader произошла ошибка {error}")
+        return None
 
     return readed_file
 
@@ -118,6 +120,7 @@ def get_info_about_card(dataframe_with_operations: pd.DataFrame, date_object: da
         )
     except Exception as error:
         logger.error(f"В функции get_info_about_card произошла ошибка {error}")
+        return None
 
     return grouped_by_card.to_dict(orient="records")
 
@@ -164,6 +167,7 @@ def get_top_5_transactions(dataframe_with_operations: pd.DataFrame, date_object:
             top_5_transaction_by_sum.append(searched_dict)
     except Exception as error:
         logger.error(f"В функции get_top_5_transactions произошла ошибка {error}")
+        return None
 
     return top_5_transaction_by_sum
 
@@ -221,6 +225,7 @@ def get_stocks_price() -> list | None:
                 print(f"Произошла ошибка {error}")
     except Exception as error:
         logger.error(f"Произошла ошибка {error}")
+        return None
     return stocks_price_list
 
 
@@ -291,6 +296,7 @@ def get_expenses(operations : pd.DataFrame, date_start: datetime.datetime | None
         logger.info("Функция отработала успешно, сформирован словарь")
     except Exception as error:
         logger.error(f"Произошла ошибка {error}")
+        return None
     return expenses_dict
 
 
@@ -338,4 +344,5 @@ def get_incoming_operations(
         logger.info('Функция успешно завершила свою работу. Сформирован словарь поступлений.')
     except Exception as error:
         logger.error(f"Произошла ошибка {error}")
+        return None
     return incoming_dict
