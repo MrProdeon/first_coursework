@@ -1,4 +1,4 @@
-from utils.views_functions import operations_reader, create_datetime_object
+from utils.functions import operations_reader, create_datetime_object
 import pandas as pd
 from typing import Optional
 from functools import wraps

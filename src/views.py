@@ -1,7 +1,7 @@
 import datetime
 import json
 
-from utils.views_functions import (
+from utils.functions import (
     create_datetime_object,
     get_currency_rate,
     get_expenses,
