@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 if not logger.handlers:
-    file_handler = logging.FileHandler("../logs/main_page.log", encoding="UTF-8", mode="a")
+    file_handler = logging.FileHandler("../logs/functions.log", encoding="UTF-8", mode="a")
     formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s (%(filename)s:%(lineno)d)")
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
