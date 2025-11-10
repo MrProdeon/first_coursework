@@ -9,30 +9,8 @@ def decorator_for_write_to_file(func):
 
 df = operations_reader("../data/operations.xlsx")
 
-def spending_by_category(transactions: pd.DataFrame,
-                         category: str,
-                         date: Optional[str] = None) -> pd.DataFrame:
 
-    transactions["Дата платежа"] = pd.to_datetime(transactions["Дата платежа"], dayfirst=True)
-
-    if date is None:
-        date = pd.Timestamp.today()
-    else:
-        date = pd.to_datetime(date)
-
-    three_month_ago = date - pd.DateOffset(months=3)
-    transactions_with_date = transactions[(transactions["Дата платежа"] <= date)
-    & (transactions["Дата платежа"] >= three_month_ago)]
-
-    only_expenses = transactions_with_date[transactions_with_date["Сумма операции"] < 0]
-
-    transactions_with_category =  only_expenses[only_expenses["Категория"] == category]
-
-    return transactions_with_category
-
-
-def spending_by_weekday(transactions: pd.DataFrame,
-                        date: Optional[str] = None) -> pd.DataFrame:
+def get_correct_dataframe(transactions: pd.DataFrame,date: Optional[str] = None) -> pd.DataFrame:
     transactions["Дата операции"] = pd.to_datetime(transactions["Дата операции"], dayfirst=True)
 
     if date is None:
@@ -44,7 +22,24 @@ def spending_by_weekday(transactions: pd.DataFrame,
     transactions_with_date = transactions[(transactions["Дата операции"] <= date)
                                           & (transactions["Дата операции"] >= three_month_ago)]
 
-    only_expenses = transactions_with_date[transactions_with_date["Сумма операции"] < 0].copy()
+    only_expenses = transactions_with_date[transactions_with_date["Сумма операции"] < 0]
+
+    return only_expenses
+
+def spending_by_category(transactions: pd.DataFrame,
+                         category: str,
+                         date: Optional[str] = None) -> pd.DataFrame:
+
+    only_expenses = get_correct_dataframe(transactions, date)
+
+    transactions_with_category =  only_expenses[only_expenses["Категория"] == category]
+
+    return transactions_with_category
+
+
+def spending_by_weekday(transactions: pd.DataFrame,
+                        date: Optional[str] = None) -> pd.DataFrame:
+    only_expenses = get_correct_dataframe(transactions, date)
 
     only_expenses["День недели"] = only_expenses["Дата операции"].dt.weekday
 
@@ -71,18 +66,7 @@ def spending_by_weekday(transactions: pd.DataFrame,
 
 def spending_by_workday(transactions: pd.DataFrame,
                         date: Optional[str] = None) -> pd.DataFrame:
-    transactions["Дата операции"] = pd.to_datetime(transactions["Дата операции"], dayfirst=True)
-
-    if date is None:
-        date = pd.Timestamp.today()
-    else:
-        date = pd.to_datetime(date)
-
-    three_month_ago = date - pd.DateOffset(months=3)
-    transactions_with_date = transactions[(transactions["Дата операции"] <= date)
-                                          & (transactions["Дата операции"] >= three_month_ago)]
-
-    only_expenses = transactions_with_date[transactions_with_date["Сумма операции"] < 0].copy()
+    only_expenses = get_correct_dataframe(transactions, date)
 
     only_expenses["День недели"] = only_expenses["Дата операции"].dt.weekday
 
@@ -97,13 +81,3 @@ def spending_by_workday(transactions: pd.DataFrame,
     expenses_by_workday = only_expenses.groupby(by="Рабочий или выходной", as_index=False).agg({"Сумма операции" : "mean"})
 
     return expenses_by_workday
-
-#print(spending_by_workday(df, "2019-10-01 00:00:00"))
-
-
-
-
-
-
-
-
