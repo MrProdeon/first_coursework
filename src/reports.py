@@ -13,6 +13,26 @@ def spending_by_category(transactions: pd.DataFrame,
                          category: str,
                          date: Optional[str] = None) -> pd.DataFrame:
 
+    transactions["Дата платежа"] = pd.to_datetime(transactions["Дата платежа"], dayfirst=True)
+
+    if date is None:
+        date = pd.Timestamp.today()
+    else:
+        date = pd.to_datetime(date)
+
+    three_month_ago = date - pd.DateOffset(months=3)
+    transactions_with_date = transactions[(transactions["Дата платежа"] <= date)
+    & (transactions["Дата платежа"] >= three_month_ago)]
+
+    only_expenses = transactions_with_date[transactions_with_date["Сумма операции"] < 0]
+
+    transactions_with_category =  only_expenses[only_expenses["Категория"] == category]
+
+    return transactions_with_category
+
+
+def spending_by_weekday(transactions: pd.DataFrame,
+                        date: Optional[str] = None) -> pd.DataFrame:
     transactions["Дата операции"] = pd.to_datetime(transactions["Дата операции"], dayfirst=True)
 
     if date is None:
@@ -22,13 +42,33 @@ def spending_by_category(transactions: pd.DataFrame,
 
     three_month_ago = date - pd.DateOffset(months=3)
     transactions_with_date = transactions[(transactions["Дата операции"] <= date)
-    & (transactions["Дата операции"] >= three_month_ago)]
+                                          & (transactions["Дата операции"] >= three_month_ago)]
 
-    transactions_with_category =  transactions_with_date[transactions_with_date["Категория"] == category]
+    only_expenses = transactions_with_date[transactions_with_date["Сумма операции"] < 0].copy()
 
-    return transactions_with_category
+    only_expenses["День недели"] = only_expenses["Дата операции"].dt.weekday
 
-print(spending_by_category(df, "Переводы", "2021-12-31 23:00:00"))
+    days = {
+        0: "Понедельник",
+        1: "Вторник",
+        2: "Среда",
+        3: "Четверг",
+        4: "Пятница",
+        5: "Суббота",
+        6: "Воскресенье",
+    }
+
+    only_expenses["День недели"]= only_expenses["День недели"].map(days)
+
+    avg_amount_per_day = (only_expenses.groupby(by="День недели", as_index=False).agg({"Сумма операции":"mean"}))
+
+
+    weekday_order = ["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"]
+    avg_amount_per_day["Порядок"] = avg_amount_per_day["День недели"].apply(lambda x: weekday_order.index(x))
+    avg_amount_per_day = avg_amount_per_day.sort_values(by="Порядок").drop(columns="Порядок")
+
+    return avg_amount_per_day
+
 
 
 
