@@ -5,10 +5,11 @@ import datetime
 from math import ceil
 import re
 import logging
+import os
 
 from typing import Any
 
-path = r"..\data\operations.xlsx"
+path_to_file = "data/operations.xlsx"
 logs_path = os.path.join(os.path.dirname(__file__), "..", "logs", "services.log")
 logger = logging.getLogger(__name__)
 if not logger.handlers:
@@ -100,7 +101,7 @@ def phone_number_search(transactions : list[dict[str,Any]]) -> str:
     result = []
     try:
         logger.info("Начало работы функции")
-        pattern = re.compile(r"\+\d+ \d+ \d+-\d+-\d+")
+        pattern = re.compile(r"\+\d+\s+\d+\s+\d+-\d+-\d+")
         result = [dict_ for dict_ in transactions
                   if pattern.search(dict_["Описание"])]
     except Exception as error:
@@ -117,7 +118,7 @@ def remittance_search(transactions : list[dict[str,Any]]) -> str:
     result = []
     try:
         logger.info("Начало работы функции")
-        pattern = re.compile(r"[А-Я][а-я]+\s+[А-Я]\.$")
+        pattern = re.compile(r"[А-ЯЁ][а-яё]+\s+[А-ЯЁ]\.$")
         result = [dict_ for dict_ in transactions
                   if pattern.search(dict_["Описание"])
                   and re.search("Переводы", dict_["Категория"])

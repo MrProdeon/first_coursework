@@ -15,7 +15,7 @@ def write_to_file(filename="report.xlsx"):
         return wrapper
     return get_report
 
-df = operations_reader("../data/operations.xlsx")
+df = operations_reader("data/operations.xlsx")
 
 
 def get_correct_dataframe(transactions: pd.DataFrame,date: Optional[str] = None) -> pd.DataFrame:
