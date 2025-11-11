@@ -190,6 +190,8 @@ def test_get_expenses(get_another_df, get_date_object, get_start_date_object):
         ]
     }
 
+    none_result = get_expenses("test_error", get_date_object, get_start_date_object)
+    assert none_result is None
 
 
 def test_get_incoming_operations(get_incoming, get_date_object, get_start_date_object):
