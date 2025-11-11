@@ -64,7 +64,9 @@ def get_time_of_day_greeting(date_object: datetime.datetime) -> str | None:
 def operations_reader(path_to_file: str) -> pd.DataFrame:
     """Функция для чтения excel файла и создания датафрейма"""
     try:
-        logger.info(f"Начало чтения файла {path_to_file}")
+        base_dir = os.path.dirname(__file__)
+        full_path = os.path.join(base_dir, "..", path_to_file)
+        logger.info(f"Начало чтения файла {full_path}")
         file = pd.read_excel(path_to_file)
     except Exception as error:
         logger.error(f"В функции operations_reader произошла ошибка {error}")
