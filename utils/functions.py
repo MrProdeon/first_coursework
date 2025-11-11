@@ -234,7 +234,7 @@ def get_stocks_price() -> list | None:
 ##############
 
 
-def get_expenses(operations : pd.DataFrame, date_start: datetime.datetime | None, date_end: datetime.datetime | None) -> dict:
+def get_expenses(operations : pd.DataFrame, date_end: datetime.datetime | None, date_start: datetime.datetime | None = None) -> dict:
     """Функция для получения информации о расходах в указанном датафрейме.
     На вход получает путь до excel файла с информацией об операциях, дату начала для анализа информации
     и дату конца для анализа информации из датафрейма.
@@ -303,7 +303,7 @@ def get_expenses(operations : pd.DataFrame, date_start: datetime.datetime | None
 
 
 def get_incoming_operations(
-    operations: pd.DataFrame, date_start: datetime.datetime | None, date_end: datetime.datetime | None
+    operations: pd.DataFrame, date_end: datetime.datetime | None, date_start: datetime.datetime | None = None
 ) -> dict:
     """Функция для получения информации о поступлениях в датафрейме.
     Принимает на вход путь до датафрейма, дату начала анализа и дату конца анализа.
