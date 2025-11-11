@@ -13,7 +13,8 @@ from utils.functions import (create_datetime_object,
                              get_top_5_transactions,
                              get_currency_rate,
                              get_stocks_price,
-                             get_expenses)
+                             get_expenses,
+                             get_incoming_operations)
 
 path_to_file = "data/operations.xlsx"
 
@@ -173,16 +174,46 @@ df = pd.DataFrame([
          }
     ])
 
+
 def test_get_expenses(get_another_df, get_date_object, get_start_date_object):
     result = get_expenses(get_another_df, get_date_object, get_start_date_object)
-    assert result == {
-        "total_amount": 200,
+
+    expected = {
+        "total_amount": 210,
         "main": [
-            {"category": "Фастфуд", "amount": 100},
-            {"category": "Переводы", "amount": 100}
+            {"category": "Переводы", "amount": 110},
+            {"category": "Фастфуд", "amount": 100}
         ],
-        "other": "-",  # нет категорий после 7 главных
+        "other": "-",
         "transfers_and_cash": [
-            {"category": "Переводы", "amount": 100}
+            {"category": "Переводы", "amount": 110}
         ]
     }
+
+
+
+def test_get_incoming_operations(get_incoming, get_date_object, get_start_date_object):
+    result = get_incoming_operations(get_incoming, get_date_object, get_start_date_object)
+    assert result == {
+        "total_amount" : 100,
+        "main" : [
+            {
+                "category" : "Переводы",
+                "amount" : 100
+            }
+        ]
+    }
+
+    result_with_no_start_date = get_incoming_operations(get_incoming, get_date_object)
+    assert result_with_no_start_date == {
+        "total_amount" : 100,
+        "main" : [
+            {
+                "category" : "Переводы",
+                "amount" : 100
+            }
+        ]
+    }
+
+    none_result = get_incoming_operations("error", get_date_object, get_start_date_object)
+    assert none_result is None
