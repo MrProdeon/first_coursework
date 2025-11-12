@@ -121,9 +121,9 @@ def get_info_about_card(dataframe_with_operations: pd.DataFrame, date_object: da
         )
     except Exception as error:
         logger.error(f"В функции get_info_about_card произошла ошибка {error}")
-        return None
+        return json.dumps([], ensure_ascii=False)
 
-    return grouped_by_card.to_dict(orient="records")
+    return json.dumps(grouped_by_card.to_dict(orient="records"),ensure_ascii=False)
 
 
 def get_top_5_transactions(dataframe_with_operations: pd.DataFrame, date_object: datetime.datetime) -> list | None:
@@ -160,7 +160,7 @@ def get_top_5_transactions(dataframe_with_operations: pd.DataFrame, date_object:
 
         for index, row in sorted_by_sum.iterrows():
             searched_dict = {
-                "date": row["date"],
+                "date": row["date"].strftime("%Y-%m-%d %H:%M:%S"),
                 "amount": abs(row["amount"]),
                 "category": row["category"],
                 "description": row["description"],
@@ -168,9 +168,9 @@ def get_top_5_transactions(dataframe_with_operations: pd.DataFrame, date_object:
             top_5_transaction_by_sum.append(searched_dict)
     except Exception as error:
         logger.error(f"В функции get_top_5_transactions произошла ошибка {error}")
-        return None
+        return json.dumps([], ensure_ascii=False)
 
-    return top_5_transaction_by_sum
+    return json.dumps(top_5_transaction_by_sum, ensure_ascii=False)
 
 
 def get_currency_rate(user_setting_path: str = user_setting_path) -> list | None:
@@ -190,15 +190,15 @@ def get_currency_rate(user_setting_path: str = user_setting_path) -> list | None
         }
 
         currency_rate_list = [{"currency": k, "rate": v} for k, v in currency_rate.items()]
-        return currency_rate_list
+        return json.dumps(currency_rate_list, ensure_ascii=False)
     except requests.exceptions.HTTPError as error:
         logger.error(f"Произошла ошибка {error}")
         print(f"Произошла ошибка : {error}")
-        return None
+        return json.dumps([], ensure_ascii=False)
     except requests.exceptions.Timeout as error:
         print("Время ожидания превысило ожидаемое.")
         logger.error(f"Произошла ошибка {error}")
-        return None
+        return json.dumps([], ensure_ascii=False)
 
 
 def get_stocks_price(user_setting_path: str = user_setting_path) -> list | None:
@@ -223,11 +223,12 @@ def get_stocks_price(user_setting_path: str = user_setting_path) -> list | None:
                     }
                 )
             except requests.exceptions.HTTPError as error:
-                print(f"Произошла ошибка {error}")
+                logger.error(f"Произошла ошибка {error}")
+                return json.dumps([], ensure_ascii=False)
     except Exception as error:
         logger.error(f"Произошла ошибка {error}")
-        return None
-    return stocks_price_list
+        return json.dumps([], ensure_ascii=False)
+    return json.dumps(stocks_price_list, ensure_ascii=False)
 
 
 ##############
@@ -299,8 +300,8 @@ def get_expenses(
         logger.info("Функция отработала успешно, сформирован словарь")
     except Exception as error:
         logger.error(f"Произошла ошибка {error}")
-        return None
-    return expenses_dict
+        return json.dumps({}, ensure_ascii=False)
+    return json.dumps(expenses_dict, ensure_ascii=False)
 
 
 def get_incoming_operations(
@@ -347,5 +348,5 @@ def get_incoming_operations(
         logger.info("Функция успешно завершила свою работу. Сформирован словарь поступлений.")
     except Exception as error:
         logger.error(f"Произошла ошибка {error}")
-        return None
-    return incoming_dict
+        return json.dumps({}, ensure_ascii=False)
+    return json.dumps(incoming_dict, ensure_ascii=False)
