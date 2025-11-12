@@ -9,11 +9,12 @@ import requests
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
-file_handler = logging.FileHandler("../logs/main_page.log", encoding="UTF-8", mode="a")
-file_formatter = logging.Formatter("%(asctime)s %(message)s %(funcName)s %(filename)s %(lineno)s")
-file_handler.setFormatter(file_formatter)
-logger.addHandler(file_handler)
-logger.setLevel(logging.DEBUG)
+if not logger.handlers:
+    file_handler = logging.FileHandler("../logs/main_page.log", encoding="UTF-8", mode="a")
+    formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s (%(filename)s:%(lineno)d)")
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    logger.setLevel(logging.DEBUG)
 
 load_dotenv()
 
@@ -224,7 +225,7 @@ def get_stocks_price() -> list | None:
 ##############
 
 
-def get_expenses(path_to_file: str, date_start: datetime.datetime | None, date_end: datetime.datetime | None) -> dict:
+def get_expenses(operations : pd.DataFrame, date_start: datetime.datetime | None, date_end: datetime.datetime | None) -> dict:
     """Функция для получения информации о расходах в указанном датафрейме.
     На вход получает путь до excel файла с информацией об операциях, дату начала для анализа информации
     и дату конца для анализа информации из датафрейма.
@@ -239,7 +240,6 @@ def get_expenses(path_to_file: str, date_start: datetime.datetime | None, date_e
     """
     try:
         logger.info("Начало работы функции")
-        operations = operations_reader(path_to_file)
 
         operations["Дата операции"] = pd.to_datetime(operations["Дата операции"], dayfirst=True)
 
@@ -293,7 +293,7 @@ def get_expenses(path_to_file: str, date_start: datetime.datetime | None, date_e
 
 
 def get_incoming_operations(
-    path_to_file: str, date_start: datetime.datetime | None, date_end: datetime.datetime | None
+    operations: pd.DataFrame, date_start: datetime.datetime | None, date_end: datetime.datetime | None
 ) -> dict:
     """Функция для получения информации о поступлениях в датафрейме.
     Принимает на вход путь до датафрейма, дату начала анализа и дату конца анализа.
@@ -305,7 +305,6 @@ def get_incoming_operations(
     """
     try:
         logger.info("Начало работы функции")
-        operations = operations_reader(path_to_file)
 
         operations["Дата операции"] = pd.to_datetime(operations["Дата операции"], dayfirst=True)
 
