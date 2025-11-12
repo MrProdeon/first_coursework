@@ -59,7 +59,7 @@ def main_page(date_string: str) -> str:
     return json.dumps(json_result, indent=4, ensure_ascii=False, default=str)
 
 
-def events_page(date_string: str, date_range: str = "M") -> str:
+def events_page(operations : pd.DataFrame,date_string: str, date_range: str = "M") -> str:
     """Функция для формирования JSON-объекта, который будет использоваться для отображения
     страницы 'События' в приложении банка.
     Принимает на вход строку даты и диапазон для поиска.
@@ -87,8 +87,8 @@ def events_page(date_string: str, date_range: str = "M") -> str:
     elif date_range == "ALL":
         date_start = None
 
-    expenses = get_expenses(readed_file, date_start, date_object)
-    incoming = get_incoming_operations(readed_file, date_start, date_object)
+    expenses = get_expenses(operations, date_start, date_object)
+    incoming = get_incoming_operations(operations, date_start, date_object)
     currency_rate = get_currency_rate()
     stocks_price = get_stocks_price()
 
