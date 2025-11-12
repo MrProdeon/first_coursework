@@ -2,16 +2,33 @@ from utils.functions import operations_reader, create_datetime_object
 import pandas as pd
 from typing import Optional
 from functools import wraps
+import logging
+import os
+
+logs_path = os.path.join(os.path.dirname(__file__), "..", "logs", "reports.log")
+logger = logging.getLogger(__name__)
+if not logger.handlers:
+    file_handler = logging.FileHandler(logs_path, encoding="UTF-8", mode="a")
+    file_formatter = logging.Formatter("%(asctime)s %(message)s %(funcName)s %(filename)s %(lineno)s")
+    file_handler.setFormatter(file_formatter)
+    logger.addHandler(file_handler)
+    logger.setLevel(logging.DEBUG)
 
 def write_to_file(filename="report.xlsx"):
     """Декоратор для записи отчета в файл. По умолчанию запись идет в report.xlsx,
     но можно указать нужное название файла"""
+    logger.info(f"Начало работы декоратора, запись в файл {filename}")
     def get_report(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            df : pd.DataFrame = func(*args, **kwargs)
-            df.to_excel(filename, index=False)
-            return df
+            try:
+                df : pd.DataFrame = func(*args, **kwargs)
+                df.to_excel(filename, index=False)
+                logger.info(f"Произошла успешная запись в файл")
+                return df
+            except Exception as error:
+                logger.error(f"Во время записи произошла ошибка {error}")
+                return df
         return wrapper
     return get_report
 
@@ -25,20 +42,25 @@ def get_correct_dataframe(transactions: pd.DataFrame,date: Optional[str] = None)
     :param date: Дата, до которой будет получен датафрейм. Получение идет за три месяца до этой даты.
     :return: Отфильтрованный датафрейм с нужной датой и только с расходами
     """
-    transactions["Дата операции"] = pd.to_datetime(transactions["Дата операции"], dayfirst=True)
+    try:
+        logger.info("Начало работы функции")
+        transactions["Дата операции"] = pd.to_datetime(transactions["Дата операции"], dayfirst=True)
 
-    if date is None:
-        date = pd.Timestamp.today()
-    else:
-        date = pd.to_datetime(date)
+        if date is None:
+            date = pd.Timestamp.today()
+        else:
+            date = pd.to_datetime(date)
 
-    three_month_ago = date - pd.DateOffset(months=3)
-    transactions_with_date = transactions[(transactions["Дата операции"] <= date)
-                                          & (transactions["Дата операции"] >= three_month_ago)]
+        three_month_ago = date - pd.DateOffset(months=3)
+        transactions_with_date = transactions[(transactions["Дата операции"] <= date)
+                                              & (transactions["Дата операции"] >= three_month_ago)]
 
-    only_expenses = transactions_with_date[transactions_with_date["Сумма операции"] < 0]
+        only_expenses = transactions_with_date[transactions_with_date["Сумма операции"] < 0]
 
-    return only_expenses
+        return only_expenses
+    except Exception as error:
+        logger.error(f"Произошла ошибка {error}")
+        return None
 
 def spending_by_category(transactions: pd.DataFrame,
                          category: str,
@@ -51,12 +73,16 @@ def spending_by_category(transactions: pd.DataFrame,
     Анализируются транзакции за последние три месяца до этой даты.
     :return: отфильтрованный датафрейм
     """
+    try:
+        logger.info("Начало работы функции")
+        only_expenses = get_correct_dataframe(transactions, date)
 
-    only_expenses = get_correct_dataframe(transactions, date)
-
-    transactions_with_category =  only_expenses[only_expenses["Категория"] == category]
-
-    return transactions_with_category
+        transactions_with_category =  only_expenses[only_expenses["Категория"] == category]
+        logger.info("Успешное завершение функции")
+        return transactions_with_category
+    except Exception as error:
+        logger.error(f"Произошла ошибка {error}")
+        return None
 
 
 def spending_by_weekday(transactions: pd.DataFrame,
@@ -69,30 +95,35 @@ def spending_by_weekday(transactions: pd.DataFrame,
     Анализируются транзакции за последние три месяца до этой даты.
     :return: датафрейм с днями недели и средних трат за эти дни в течение 3 месяцев.
     """
-    only_expenses = get_correct_dataframe(transactions, date)
+    try:
+        logger.info("Начало работы функции")
+        only_expenses = get_correct_dataframe(transactions, date)
 
-    only_expenses["День недели"] = only_expenses["Дата операции"].dt.weekday
+        only_expenses["День недели"] = only_expenses["Дата операции"].dt.weekday
 
-    days = {
-        0: "Понедельник",
-        1: "Вторник",
-        2: "Среда",
-        3: "Четверг",
-        4: "Пятница",
-        5: "Суббота",
-        6: "Воскресенье",
-    }
+        days = {
+            0: "Понедельник",
+            1: "Вторник",
+            2: "Среда",
+            3: "Четверг",
+            4: "Пятница",
+            5: "Суббота",
+            6: "Воскресенье",
+        }
 
-    only_expenses["День недели"]= only_expenses["День недели"].map(days)
+        only_expenses["День недели"]= only_expenses["День недели"].map(days)
 
-    avg_amount_per_day = (only_expenses.groupby(by="День недели", as_index=False).agg({"Сумма операции":"mean"}))
+        avg_amount_per_day = (only_expenses.groupby(by="День недели", as_index=False).agg({"Сумма операции":"mean"}))
 
 
-    weekday_order = ["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"]
-    avg_amount_per_day["Порядок"] = avg_amount_per_day["День недели"].apply(lambda x: weekday_order.index(x))
-    avg_amount_per_day = avg_amount_per_day.sort_values(by="Порядок").drop(columns="Порядок")
-
-    return avg_amount_per_day
+        weekday_order = ["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"]
+        avg_amount_per_day["Порядок"] = avg_amount_per_day["День недели"].apply(lambda x: weekday_order.index(x))
+        avg_amount_per_day = avg_amount_per_day.sort_values(by="Порядок").drop(columns="Порядок")
+        logger.info("Функция успешно завершила работу")
+        return avg_amount_per_day
+    except Exception as error:
+        logger.error(f"Произошла ошибка {error}")
+        return None
 
 
 def spending_by_workday(transactions: pd.DataFrame,
@@ -106,18 +137,23 @@ def spending_by_workday(transactions: pd.DataFrame,
     :return: датафрейм с информацией о средних тратах по выходным и будням за последние 3 месяца до
     указанной даты. Если дата не указана - за последние 3 месяца от сегодняшнего дня.
     """
-    only_expenses = get_correct_dataframe(transactions, date)
+    try:
+        logger.info("Начало работы функции")
+        only_expenses = get_correct_dataframe(transactions, date)
 
-    only_expenses["День недели"] = only_expenses["Дата операции"].dt.weekday
+        only_expenses["День недели"] = only_expenses["Дата операции"].dt.weekday
 
-    def work_or_weekend(day):
-        if day <= 4:
-            return "Рабочий"
-        else:
-            return "Выходной"
+        def work_or_weekend(day):
+            if day <= 4:
+                return "Рабочий"
+            else:
+                return "Выходной"
 
-    only_expenses["Рабочий или выходной"] = only_expenses["День недели"].apply(work_or_weekend)
+        only_expenses["Рабочий или выходной"] = only_expenses["День недели"].apply(work_or_weekend)
 
-    expenses_by_workday = only_expenses.groupby(by="Рабочий или выходной", as_index=False).agg({"Сумма операции" : "mean"})
-
-    return expenses_by_workday
+        expenses_by_workday = only_expenses.groupby(by="Рабочий или выходной", as_index=False).agg({"Сумма операции" : "mean"})
+        logger.info("Функция успешно завершила свою работу")
+        return expenses_by_workday
+    except Exception as error:
+        logger.error(f"Произошла ошибка {error}")
+        return None
