@@ -1,6 +1,8 @@
 import datetime
 import json
 
+import pandas as pd
+
 from utils.functions import (
     create_datetime_object,
     get_currency_rate,
@@ -13,7 +15,8 @@ from utils.functions import (
     operations_reader,
 )
 
-path = r"..\data\operations.xlsx"
+path = r"data\operations.xlsx"
+readed_file = operations_reader(path) or pd.DataFrame()
 
 
 def main_page(date_string: str) -> str:
@@ -37,12 +40,13 @@ def main_page(date_string: str) -> str:
         raise ValueError(f"Невозможно преобразовать строку '{date_string}' в дату")
     greeting = get_time_of_day_greeting(date_object)
 
-    operations = operations_reader(path).fillna("Информация не указана.")
-    info_about_card = get_info_about_card(operations, date_object)
-    top_5_transactions = get_top_5_transactions(operations, date_object)
+    operations = readed_file
+    operations = operations.fillna("Информация не указана.")
+    info_about_card = get_info_about_card(operations, date_object) or []
+    top_5_transactions = get_top_5_transactions(operations, date_object) or []
 
-    currency_rate = get_currency_rate()
-    stocks_price = get_stocks_price()
+    currency_rate: list[dict[str, int | float]] | None = get_currency_rate() or []
+    stocks_price: list[dict[str, int | float]] | None = get_stocks_price() or []
 
     json_result = {
         "greeting": greeting,
@@ -83,8 +87,8 @@ def events_page(date_string: str, date_range: str = "M") -> str:
     elif date_range == "ALL":
         date_start = None
 
-    expenses = get_expenses(path, date_start, date_object)
-    incoming = get_incoming_operations(path, date_start, date_object)
+    expenses = get_expenses(readed_file, date_start, date_object)
+    incoming = get_incoming_operations(readed_file, date_start, date_object)
     currency_rate = get_currency_rate()
     stocks_price = get_stocks_price()
 

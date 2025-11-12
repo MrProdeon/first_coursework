@@ -8,7 +8,6 @@ import pandas as pd
 import requests
 from dotenv import load_dotenv
 
-
 logs_path = os.path.join(os.path.dirname(__file__), "..", "logs", "functions.log")
 logger = logging.getLogger(__name__)
 if not logger.handlers:
@@ -22,7 +21,7 @@ load_dotenv()
 
 APIKEY = os.getenv("APININJAS_KEY")
 
-path = r"..\data\operations.xlsx"
+path = r"data\operations.xlsx"
 
 user_setting_path = "../user_setting.json"
 
@@ -61,17 +60,17 @@ def get_time_of_day_greeting(date_object: datetime.datetime) -> str | None:
         return None
 
 
-def operations_reader(path_to_file: str) -> pd.DataFrame:
+def operations_reader(path_to_file: str) -> pd.DataFrame | None:
     """Функция для чтения excel файла и создания датафрейма"""
     try:
         base_dir = os.path.dirname(__file__)
         full_path = os.path.join(base_dir, "..", path_to_file)
         logger.info(f"Начало чтения файла {full_path}")
-        file = pd.read_excel(path_to_file)
+        file = pd.read_excel(full_path)
+        return file
     except Exception as error:
         logger.error(f"В функции operations_reader произошла ошибка {error}")
         return None
-    return file
 
 
 def user_setting_reader(path_to_file: str) -> dict | Any:
@@ -89,7 +88,7 @@ def user_setting_reader(path_to_file: str) -> dict | Any:
     return readed_file
 
 
-def get_info_about_card(dataframe_with_operations: pd.DataFrame, date_object: datetime.datetime) -> list[dict]:
+def get_info_about_card(dataframe_with_operations: pd.DataFrame, date_object: datetime.datetime) -> list[dict] | None:
     """Функция для преобразования данных из датафрейма в информацию о номерах карт,
     общей сумме покупок по определенной карте и кэшбэка по определенной карте.
     Вернет список словарей, где каждый словарь - описанные выше данные
@@ -127,7 +126,7 @@ def get_info_about_card(dataframe_with_operations: pd.DataFrame, date_object: da
     return grouped_by_card.to_dict(orient="records")
 
 
-def get_top_5_transactions(dataframe_with_operations: pd.DataFrame, date_object: datetime.datetime) -> list:
+def get_top_5_transactions(dataframe_with_operations: pd.DataFrame, date_object: datetime.datetime) -> list | None:
     """Функция для получения 5 самых больших транзакций из датафрейма.
     Принимает датафрейм и дату, до которой будет происходить поиск в этом месяце.
     Вернет список словарей, который будет использоваться в главной функции для формирования JSON-объекта.
@@ -174,7 +173,7 @@ def get_top_5_transactions(dataframe_with_operations: pd.DataFrame, date_object:
     return top_5_transaction_by_sum
 
 
-def get_currency_rate() -> list | None:
+def get_currency_rate(user_setting_path: str = user_setting_path) -> list | None:
     """Функция для получения курса валют.
     Получает курс только тех валют, которые указаны в файле user_setting.json
     Вернет список словарей, в котором каждый словарь - название валюты и её курс."""
@@ -202,7 +201,7 @@ def get_currency_rate() -> list | None:
         return None
 
 
-def get_stocks_price() -> list | None:
+def get_stocks_price(user_setting_path: str = user_setting_path) -> list | None:
     """Функция для получения цен акций.
     Получает цены только тех акций, которые указаны в файле user_setting.json
     Вернет список словарей, в котором каждый словарь - название акции и её стоимость"""
@@ -234,7 +233,9 @@ def get_stocks_price() -> list | None:
 ##############
 
 
-def get_expenses(operations : pd.DataFrame, date_end: datetime.datetime | None, date_start: datetime.datetime | None = None) -> dict:
+def get_expenses(
+    operations: pd.DataFrame, date_end: datetime.datetime | None, date_start: datetime.datetime | None = None
+) -> dict | None:
     """Функция для получения информации о расходах в указанном датафрейме.
     На вход получает путь до excel файла с информацией об операциях, дату начала для анализа информации
     и дату конца для анализа информации из датафрейма.
@@ -304,7 +305,7 @@ def get_expenses(operations : pd.DataFrame, date_end: datetime.datetime | None, 
 
 def get_incoming_operations(
     operations: pd.DataFrame, date_end: datetime.datetime | None, date_start: datetime.datetime | None = None
-) -> dict:
+) -> dict | None:
     """Функция для получения информации о поступлениях в датафрейме.
     Принимает на вход путь до датафрейма, дату начала анализа и дату конца анализа.
 
@@ -343,7 +344,7 @@ def get_incoming_operations(
         logger.info("Получен раздел основное с разделением постулений по категориям по убыванию")
 
         incoming_dict = {"total_amount": total_incoming, "main": main_incoming_list}
-        logger.info('Функция успешно завершила свою работу. Сформирован словарь поступлений.')
+        logger.info("Функция успешно завершила свою работу. Сформирован словарь поступлений.")
     except Exception as error:
         logger.error(f"Произошла ошибка {error}")
         return None
