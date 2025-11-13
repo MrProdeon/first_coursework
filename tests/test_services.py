@@ -15,7 +15,7 @@ def test_profitable_cashback(get_another_df):
 
 def test_investment_bank(data_for_investment_bank):
     result = investment_bank("2025-11", data_for_investment_bank, 100)
-    assert result == 130
+    assert result == "130"
 
 
 def test_investment_bank_error(data_for_investment_bank):

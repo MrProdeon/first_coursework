@@ -18,7 +18,7 @@ if not logger.handlers:
     logger.setLevel(logging.DEBUG)
 
 
-def profitable_cashback(readed_file: pd.DataFrame, year: str, month: str) -> str:
+def profitable_cashback(transactions: list[dict[str, Any]], year: str, month: str) -> str:
     """Функция для анализа выгоды, полученной от кэшбэка.
     Принимает путь до файла с операциями, год для анализа и месяц для анализа.
     Возвращает JSON, состоящий из словаря, в котором отображены все кэшбэки
@@ -26,6 +26,8 @@ def profitable_cashback(readed_file: pd.DataFrame, year: str, month: str) -> str
     resulted_dict = {}
     try:
         logger.info("Начало работы функции")
+
+        readed_file = pd.DataFrame(transactions)
 
         readed_file["Дата операции"] = pd.to_datetime(readed_file["Дата операции"], dayfirst=True)
 
@@ -79,7 +81,7 @@ def investment_bank(month: str, transactions: list[dict[str, Any]], limit: int) 
             ),
             2,
         )
-        return result
+        return json.dumps(result, ensure_ascii=False)
 
     except Exception as error:
         logger.error(f"Произошла ошибка {error}")

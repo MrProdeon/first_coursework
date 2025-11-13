@@ -1,4 +1,5 @@
 # mypy: ignore-errors
+import json
 
 import pandas as pd
 
@@ -70,34 +71,34 @@ def test_get_correct_dataframe(get_incoming):
 
 def test_spending_by_category(get_incoming):
     result = spending_by_category(get_incoming, "Фастфуд", "2025-11-11 00:00:00")
-    assert result.to_dict(orient="records") == [
+    assert result == json.dumps([
         {
-            "Дата операции": pd.Timestamp("2025-11-11 00:00:00"),
+            "Дата операции": "2025-11-11 00:00:00",
             "Сумма операции": -100,
             "Номер карты": "*4023",
             "Категория": "Фастфуд",
             "Описание": "Тест Фастфуд",
         }
-    ]
+    ], ensure_ascii=False)
 
     none_result = spending_by_category("eror", 123)
-    assert type(none_result) is pd.DataFrame
+    assert none_result == json.dumps({})
 
 
 def test_spending_by_weekday(get_another_df):
     result = spending_by_weekday(get_another_df, "2025-11-11 00:00:00")
-    assert result.to_dict(orient="records") == [
+    assert result == json.dumps([
         {"День недели": "Понедельник", "Сумма операции": -110.0},
         {"День недели": "Вторник", "Сумма операции": -100.0},
-    ]
+    ], ensure_ascii=False)
 
     none_result = spending_by_weekday(123, 123)
-    assert type(none_result) is pd.DataFrame
+    assert none_result == json.dumps({}, ensure_ascii=False)
 
 
 def test_spending_by_workday(get_another_df):
     result = spending_by_workday(get_another_df, "2025-11-11 00:00:00")
-    assert result.to_dict(orient="records") == [{"Рабочий или выходной": "Рабочий", "Сумма операции": -105.0}]
+    assert result == json.dumps([{"Рабочий или выходной": "Рабочий", "Сумма операции": -105.0}], ensure_ascii=False)
 
     none_result = spending_by_workday(123, 123)
-    assert type(none_result) is pd.DataFrame
+    assert none_result == json.dumps({}, ensure_ascii=False)

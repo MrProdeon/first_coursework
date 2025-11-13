@@ -4,7 +4,7 @@ from functools import wraps
 from typing import Callable, Optional
 
 import pandas as pd
-
+import json
 from utils.functions import operations_reader
 
 logs_path = os.path.join(os.path.dirname(__file__), "..", "logs", "reports.log")
@@ -85,11 +85,22 @@ def spending_by_category(transactions: pd.DataFrame, category: str, date: Option
         only_expenses = get_correct_dataframe(transactions, date)
 
         transactions_with_category = only_expenses[only_expenses["Категория"] == category]
-        logger.info("Успешное завершение функции")
-        return transactions_with_category
+
+        if not transactions_with_category.empty:
+            result_df = transactions_with_category.copy()
+            for col in result_df.columns:
+                if pd.api.types.is_datetime64_any_dtype(result_df[col]):
+                    result_df[col] = result_df[col].dt.strftime('%Y-%m-%d %H:%M:%S')
+
+            logger.info("Успешное завершение функции")
+            return json.dumps(result_df.to_dict(orient="records"), ensure_ascii=False)
+        else:
+            logger.info("Нет данных по указанной категории")
+            return json.dumps({}, ensure_ascii=False)
+
     except Exception as error:
         logger.error(f"Произошла ошибка {error}")
-        return pd.DataFrame()
+        return json.dumps({}, ensure_ascii=False)
 
 
 def spending_by_weekday(transactions: pd.DataFrame, date: Optional[str] = None) -> pd.DataFrame:
@@ -125,10 +136,10 @@ def spending_by_weekday(transactions: pd.DataFrame, date: Optional[str] = None) 
         avg_amount_per_day["Порядок"] = avg_amount_per_day["День недели"].apply(lambda x: weekday_order.index(x))
         avg_amount_per_day = avg_amount_per_day.sort_values(by="Порядок").drop(columns="Порядок")
         logger.info("Функция успешно завершила работу")
-        return avg_amount_per_day
+        return json.dumps(avg_amount_per_day.to_dict(orient="records"), ensure_ascii=False)
     except Exception as error:
         logger.error(f"Произошла ошибка {error}")
-        return pd.DataFrame()
+        return json.dumps({}, ensure_ascii=False)
 
 
 def spending_by_workday(transactions: pd.DataFrame, date: Optional[str] = None) -> pd.DataFrame:
@@ -159,7 +170,7 @@ def spending_by_workday(transactions: pd.DataFrame, date: Optional[str] = None) 
             {"Сумма операции": "mean"}
         )
         logger.info("Функция успешно завершила свою работу")
-        return expenses_by_workday
+        return json.dumps(expenses_by_workday.to_dict(orient="records"), ensure_ascii=False)
     except Exception as error:
         logger.error(f"Произошла ошибка {error}")
-        return pd.DataFrame()
+        return json.dumps({}, ensure_ascii=False)
