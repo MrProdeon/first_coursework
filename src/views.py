@@ -16,7 +16,8 @@ from utils.functions import (
 )
 
 path = r"data\operations.xlsx"
-readed_file = operations_reader(path) or pd.DataFrame()
+df = operations_reader(path)
+readed_file = df if df is not None and not df.empty else pd.DataFrame()
 
 
 def main_page(date_string: str) -> str:
