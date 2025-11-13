@@ -1,9 +1,10 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import json
 import pytest
-
+from datetime import datetime
 import utils.functions
-from src.views import main_page
+import pandas as pd
+from src.views import main_page, events_page
 
 
 @patch("src.views.get_stocks_price", return_value=[{"AAPL": 10}])
@@ -12,8 +13,6 @@ from src.views import main_page
 @patch("src.views.get_info_about_card", return_value=[{"Карта": "*4023"}])
 @patch("src.views.create_datetime_object")
 def test_main_page(mock_date, *_):
-    from datetime import datetime
-    # возвращаем реальный объект datetime, а не MagicMock
     mock_date.return_value = datetime(2025, 11, 11)
 
     result = main_page("2025-11-11 00:00:00")
@@ -24,3 +23,26 @@ def test_main_page(mock_date, *_):
     assert "top_transactions" in data and data["top_transactions"] == [{"Операция": "Покупка"}]
     assert "currency_rates" in data and data["currency_rates"] ==  [{"USD": 30}]
     assert "stocks_prices" in data and data["stocks_prices"] == [{"AAPL": 10}]
+
+
+@patch("src.views.get_expenses", return_value=[{"total_amount" : 100}])
+@patch("src.views.get_incoming_operations", return_value=[{"total_amount" : 200}])
+@patch("src.views.get_currency_rate", return_value=[{"USD": 30}])
+@patch("src.views.get_stocks_price", return_value=[{"AAPL": 10}])
+@patch("src.views.create_datetime_object")
+def test_events_page(mock_date, *_):
+    mock_date.return_value = datetime(2025,11,11)
+    df = pd.DataFrame()
+    result = events_page(df, "2025-11-11","M")
+
+    data = json.loads(result)
+
+    assert "expenses" in data
+    assert "income" in data
+    assert "currency_rates" in data
+    assert "stocks_prices" in data
+
+    assert data["expenses"] == [{"total_amount": 100}]
+    assert data["income"] == [{"total_amount": 200}]
+    assert data["currency_rates"] == [{"USD": 30}]
+    assert data["stocks_prices"] == [{"AAPL": 10}]
