@@ -23,7 +23,8 @@ APIKEY = os.getenv("APININJAS_KEY")
 
 path = r"data\operations.xlsx"
 
-user_setting_path = "../user_setting.json"
+user_setting_path = os.path.join(os.path.dirname(__file__),"..","user_setting.json")
+
 
 
 def create_datetime_object(date_str: str) -> datetime.datetime | None:
