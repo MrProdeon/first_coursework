@@ -43,11 +43,11 @@ def main_page(date_string: str) -> str:
 
     operations = readed_file
     operations = operations.fillna("Информация не указана.")
-    info_about_card = get_info_about_card(operations, date_object) or []
-    top_5_transactions = get_top_5_transactions(operations, date_object) or []
+    info_about_card = json.loads(get_info_about_card(operations, date_object)) or []
+    top_5_transactions = json.loads(get_top_5_transactions(operations, date_object)) or []
 
-    currency_rate: list[dict[str, int | float]] | None = get_currency_rate() or []
-    stocks_price: list[dict[str, int | float]] | None = get_stocks_price() or []
+    currency_rate: list[dict[str, int | float]] | None = json.loads(get_currency_rate()) or []
+    stocks_price: list[dict[str, int | float]] | None = json.loads(get_stocks_price()) or []
 
     json_result = {
         "greeting": greeting,
@@ -101,3 +101,29 @@ def events_page(operations : pd.DataFrame,date_string: str, date_range: str = "M
     }
 
     return json.dumps(json_result, indent=4, ensure_ascii=False)
+
+
+def show_main_page(date_string : str):
+    main_bank_page = json.loads(main_page(date_string))
+    print(main_bank_page["greeting"])
+    print("=" * 40)
+    print("Ваши карты: ")
+    for card in main_bank_page["cards"]:
+        print(f"Номер карты: {card["last_digits"]}")
+        print(f"Сумма операций: {card["total_spent"]}")
+        print(f"Кэшбэк: {card["cashback"]}\n")
+    print("=" * 40)
+    print("Самые большие покупки: ")
+    for transaction in main_bank_page["top_transactions"]:
+        print(f"""Дата : {transaction["date"]}
+Сумма : {transaction["amount"]}
+Категория {transaction["category"]}:
+Описание: {transaction["description"]}\n""")
+    print("=" * 40)
+    print("Курсы выбранных валют: ")
+    for rate in main_bank_page["currency_rates"]:
+        print(f"Валюта : {rate["currency"]}, курс : {rate["rate"]}\n")
+    print("=" * 40)
+    print("Стоимость выбранных акций: ")
+    for stock in main_bank_page["stocks_prices"]:
+        print(f"Акция : {stock["stock"]}, цена : {stock["price"]}\n")
