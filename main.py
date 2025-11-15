@@ -41,7 +41,15 @@ def main() -> None:
             show_main_page(TIME_FOR_TEST)
         elif selected_section == "2":
             print("Раздел «События»")
-            events = json.loads(events_page(readed_file, TIME_FOR_TEST, "ALL"))
+            date_range_answer = input("""За какой временный период просмотреть события?
+1 - для поиска за текущий месяц
+2 - для поиска за текущий год
+3 - за всё время
+-> """)
+            while date_range_answer not in ("1", "2", "3"):
+                date_range_answer = input("На выбор только 1, 2 или 3 -> ")
+            date_range = "M" if date_range_answer == "1" else "Y" if date_range_answer == "2" else "ALL"
+            events = json.loads(events_page(readed_file, TIME_FOR_TEST, date_range))
             print("Расходы: ")
             print("-" * 40)
             print("Общая сумма расходов: ")
