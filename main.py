@@ -12,7 +12,9 @@ from utils.functions import operations_reader
 NOW_TIME = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 TIME_FOR_TEST = "2019-11-11 00:00:00"
 path = r"data\operations.xlsx"
-df = operations_reader(path) or pd.DataFrame()
+df = operations_reader(path)
+if df is None:
+    df = pd.DataFrame()
 df_list_of_dicts = cast(list[dict[str, Any]], df.to_dict(orient="records"))
 readed_file = df if df is not None and not df.empty else pd.DataFrame()
 
