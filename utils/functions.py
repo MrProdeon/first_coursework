@@ -8,9 +8,10 @@ import pandas as pd
 import requests
 from dotenv import load_dotenv
 
+logs_path = os.path.join(os.path.dirname(__file__), "..", "logs", "functions.log")
 logger = logging.getLogger(__name__)
 if not logger.handlers:
-    file_handler = logging.FileHandler("../logs/main_page.log", encoding="UTF-8", mode="a")
+    file_handler = logging.FileHandler(logs_path, encoding="UTF-8", mode="a")
     formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s (%(filename)s:%(lineno)d)")
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
@@ -20,9 +21,9 @@ load_dotenv()
 
 APIKEY = os.getenv("APININJAS_KEY")
 
-path = r"..\data\operations.xlsx"
+path = r"data\operations.xlsx"
 
-user_setting_path = "../user_setting.json"
+user_setting_path = os.path.join(os.path.dirname(__file__), "..", "user_setting.json")
 
 
 def create_datetime_object(date_str: str) -> datetime.datetime | None:
@@ -40,8 +41,8 @@ def create_datetime_object(date_str: str) -> datetime.datetime | None:
 def get_time_of_day_greeting(date_object: datetime.datetime) -> str | None:
     """Функция для определения времени суток, использует часы в качестве определителя"""
     logger.info("Начало работы функции get_time_of_day_greeting")
-    hour = date_object.hour
     try:
+        hour = date_object.hour
         if 5 <= hour <= 11:
             logger.info("Функция get_time_of_day_greeting определила, что сейчас утро")
             return "Доброе утро"
@@ -59,14 +60,17 @@ def get_time_of_day_greeting(date_object: datetime.datetime) -> str | None:
         return None
 
 
-def operations_reader(path_to_file: str) -> pd.DataFrame:
+def operations_reader(path_to_file: str) -> pd.DataFrame | None:
     """Функция для чтения excel файла и создания датафрейма"""
     try:
-        logger.info(f"Начало чтения файла {path_to_file}")
-        file = pd.read_excel(path_to_file)
+        base_dir = os.path.dirname(__file__)
+        full_path = os.path.join(base_dir, "..", path_to_file)
+        logger.info(f"Начало чтения файла {full_path}")
+        file = pd.read_excel(full_path)
+        return file
     except Exception as error:
         logger.error(f"В функции operations_reader произошла ошибка {error}")
-    return file
+        return None
 
 
 def user_setting_reader(path_to_file: str) -> dict | Any:
@@ -79,11 +83,12 @@ def user_setting_reader(path_to_file: str) -> dict | Any:
             logger.info("Файл успешно загружен в пайтон-объект")
     except Exception as error:
         logger.error(f"В функции user_setting_reader произошла ошибка {error}")
+        return None
 
     return readed_file
 
 
-def get_info_about_card(dataframe_with_operations: pd.DataFrame, date_object: datetime.datetime) -> list[dict]:
+def get_info_about_card(dataframe_with_operations: pd.DataFrame, date_object: datetime.datetime) -> str | None:
     """Функция для преобразования данных из датафрейма в информацию о номерах карт,
     общей сумме покупок по определенной карте и кэшбэка по определенной карте.
     Вернет список словарей, где каждый словарь - описанные выше данные
@@ -116,11 +121,12 @@ def get_info_about_card(dataframe_with_operations: pd.DataFrame, date_object: da
         )
     except Exception as error:
         logger.error(f"В функции get_info_about_card произошла ошибка {error}")
+        return json.dumps([], ensure_ascii=False)
 
-    return grouped_by_card.to_dict(orient="records")
+    return json.dumps(grouped_by_card.to_dict(orient="records"), ensure_ascii=False)
 
 
-def get_top_5_transactions(dataframe_with_operations: pd.DataFrame, date_object: datetime.datetime) -> list:
+def get_top_5_transactions(dataframe_with_operations: pd.DataFrame, date_object: datetime.datetime) -> str | None:
     """Функция для получения 5 самых больших транзакций из датафрейма.
     Принимает датафрейм и дату, до которой будет происходить поиск в этом месяце.
     Вернет список словарей, который будет использоваться в главной функции для формирования JSON-объекта.
@@ -154,7 +160,7 @@ def get_top_5_transactions(dataframe_with_operations: pd.DataFrame, date_object:
 
         for index, row in sorted_by_sum.iterrows():
             searched_dict = {
-                "date": row["date"],
+                "date": row["date"].strftime("%Y-%m-%d %H:%M:%S"),
                 "amount": abs(row["amount"]),
                 "category": row["category"],
                 "description": row["description"],
@@ -162,11 +168,12 @@ def get_top_5_transactions(dataframe_with_operations: pd.DataFrame, date_object:
             top_5_transaction_by_sum.append(searched_dict)
     except Exception as error:
         logger.error(f"В функции get_top_5_transactions произошла ошибка {error}")
+        return json.dumps([], ensure_ascii=False)
 
-    return top_5_transaction_by_sum
+    return json.dumps(top_5_transaction_by_sum, ensure_ascii=False)
 
 
-def get_currency_rate() -> list | None:
+def get_currency_rate(user_setting_path: str = user_setting_path) -> str | None:
     """Функция для получения курса валют.
     Получает курс только тех валют, которые указаны в файле user_setting.json
     Вернет список словарей, в котором каждый словарь - название валюты и её курс."""
@@ -183,18 +190,18 @@ def get_currency_rate() -> list | None:
         }
 
         currency_rate_list = [{"currency": k, "rate": v} for k, v in currency_rate.items()]
-        return currency_rate_list
+        return json.dumps(currency_rate_list, ensure_ascii=False)
     except requests.exceptions.HTTPError as error:
         logger.error(f"Произошла ошибка {error}")
         print(f"Произошла ошибка : {error}")
-        return None
+        return json.dumps([], ensure_ascii=False)
     except requests.exceptions.Timeout as error:
         print("Время ожидания превысило ожидаемое.")
         logger.error(f"Произошла ошибка {error}")
-        return None
+        return json.dumps([], ensure_ascii=False)
 
 
-def get_stocks_price() -> list | None:
+def get_stocks_price(user_setting_path: str = user_setting_path) -> str | None:
     """Функция для получения цен акций.
     Получает цены только тех акций, которые указаны в файле user_setting.json
     Вернет список словарей, в котором каждый словарь - название акции и её стоимость"""
@@ -216,16 +223,20 @@ def get_stocks_price() -> list | None:
                     }
                 )
             except requests.exceptions.HTTPError as error:
-                print(f"Произошла ошибка {error}")
+                logger.error(f"Произошла ошибка {error}")
+                return json.dumps([], ensure_ascii=False)
     except Exception as error:
         logger.error(f"Произошла ошибка {error}")
-    return stocks_price_list
+        return json.dumps([], ensure_ascii=False)
+    return json.dumps(stocks_price_list, ensure_ascii=False)
 
 
 ##############
 
 
-def get_expenses(operations : pd.DataFrame, date_start: datetime.datetime | None, date_end: datetime.datetime | None) -> dict:
+def get_expenses(
+    operations: pd.DataFrame, date_end: datetime.datetime | None, date_start: datetime.datetime | None = None
+) -> str | None:
     """Функция для получения информации о расходах в указанном датафрейме.
     На вход получает путь до excel файла с информацией об операциях, дату начала для анализа информации
     и дату конца для анализа информации из датафрейма.
@@ -289,12 +300,13 @@ def get_expenses(operations : pd.DataFrame, date_start: datetime.datetime | None
         logger.info("Функция отработала успешно, сформирован словарь")
     except Exception as error:
         logger.error(f"Произошла ошибка {error}")
-    return expenses_dict
+        return json.dumps({}, ensure_ascii=False)
+    return json.dumps(expenses_dict, ensure_ascii=False)
 
 
 def get_incoming_operations(
-    operations: pd.DataFrame, date_start: datetime.datetime | None, date_end: datetime.datetime | None
-) -> dict:
+    operations: pd.DataFrame, date_end: datetime.datetime | None, date_start: datetime.datetime | None = None
+) -> str | None:
     """Функция для получения информации о поступлениях в датафрейме.
     Принимает на вход путь до датафрейма, дату начала анализа и дату конца анализа.
 
@@ -333,7 +345,8 @@ def get_incoming_operations(
         logger.info("Получен раздел основное с разделением постулений по категориям по убыванию")
 
         incoming_dict = {"total_amount": total_incoming, "main": main_incoming_list}
-        logger.info('Функция успешно завершила свою работу. Сформирован словарь поступлений.')
+        logger.info("Функция успешно завершила свою работу. Сформирован словарь поступлений.")
     except Exception as error:
         logger.error(f"Произошла ошибка {error}")
-    return incoming_dict
+        return json.dumps({}, ensure_ascii=False)
+    return json.dumps(incoming_dict, ensure_ascii=False)
