@@ -1,10 +1,11 @@
+import json
 import logging
 import os
 from functools import wraps
 from typing import Callable, Optional
 
 import pandas as pd
-import json
+
 from utils.functions import operations_reader
 
 logs_path = os.path.join(os.path.dirname(__file__), "..", "logs", "reports.log")
@@ -26,7 +27,7 @@ def write_to_file(filename: str = "report.xlsx") -> Callable:
         @wraps(func)
         def wrapper(*args: pd.DataFrame | Optional[str], **kwargs: pd.DataFrame | Optional[str]) -> pd.DataFrame:
             try:
-                df: pd.DataFrame = func(*args, **kwargs)
+                df: pd.DataFrame = pd.DataFrame(json.loads(func(*args)))
                 df.to_excel(filename, index=False)
                 logger.info("Произошла успешная запись в файл")
                 return df
@@ -71,7 +72,7 @@ def get_correct_dataframe(transactions: pd.DataFrame, date: Optional[str] = None
         return pd.DataFrame()
 
 
-def spending_by_category(transactions: pd.DataFrame, category: str, date: Optional[str] = None) -> pd.DataFrame:
+def spending_by_category(transactions: pd.DataFrame, category: str, date: Optional[str] = None) -> str:
     """
     Функция для фильтрации датафрейма по указанной категории и дате за три месяца.
     :param transactions: Датафрейм для фильтрации
@@ -90,7 +91,7 @@ def spending_by_category(transactions: pd.DataFrame, category: str, date: Option
             result_df = transactions_with_category.copy()
             for col in result_df.columns:
                 if pd.api.types.is_datetime64_any_dtype(result_df[col]):
-                    result_df[col] = result_df[col].dt.strftime('%Y-%m-%d %H:%M:%S')
+                    result_df[col] = result_df[col].dt.strftime("%Y-%m-%d %H:%M:%S")
 
             logger.info("Успешное завершение функции")
             return json.dumps(result_df.to_dict(orient="records"), ensure_ascii=False)
@@ -103,7 +104,7 @@ def spending_by_category(transactions: pd.DataFrame, category: str, date: Option
         return json.dumps({}, ensure_ascii=False)
 
 
-def spending_by_weekday(transactions: pd.DataFrame, date: Optional[str] = None) -> pd.DataFrame:
+def spending_by_weekday(transactions: pd.DataFrame, date: Optional[str] = None) -> str:
     """
     Функция для поиска среднеарефмитических трат по дням недели за последние три месяца
     до указанной даты. Если дата не указана - от сегодняшнего дня.
@@ -142,7 +143,7 @@ def spending_by_weekday(transactions: pd.DataFrame, date: Optional[str] = None) 
         return json.dumps({}, ensure_ascii=False)
 
 
-def spending_by_workday(transactions: pd.DataFrame, date: Optional[str] = None) -> pd.DataFrame:
+def spending_by_workday(transactions: pd.DataFrame, date: Optional[str] = None) -> str:
     """
     Функция для анализа среднеарефмитических трат по выходным и будним дням за последние три месяца
     до указанной даты

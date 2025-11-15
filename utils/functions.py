@@ -23,8 +23,7 @@ APIKEY = os.getenv("APININJAS_KEY")
 
 path = r"data\operations.xlsx"
 
-user_setting_path = os.path.join(os.path.dirname(__file__),"..","user_setting.json")
-
+user_setting_path = os.path.join(os.path.dirname(__file__), "..", "user_setting.json")
 
 
 def create_datetime_object(date_str: str) -> datetime.datetime | None:
@@ -89,7 +88,7 @@ def user_setting_reader(path_to_file: str) -> dict | Any:
     return readed_file
 
 
-def get_info_about_card(dataframe_with_operations: pd.DataFrame, date_object: datetime.datetime) -> list[dict] | None:
+def get_info_about_card(dataframe_with_operations: pd.DataFrame, date_object: datetime.datetime) -> str | None:
     """Функция для преобразования данных из датафрейма в информацию о номерах карт,
     общей сумме покупок по определенной карте и кэшбэка по определенной карте.
     Вернет список словарей, где каждый словарь - описанные выше данные
@@ -124,10 +123,10 @@ def get_info_about_card(dataframe_with_operations: pd.DataFrame, date_object: da
         logger.error(f"В функции get_info_about_card произошла ошибка {error}")
         return json.dumps([], ensure_ascii=False)
 
-    return json.dumps(grouped_by_card.to_dict(orient="records"),ensure_ascii=False)
+    return json.dumps(grouped_by_card.to_dict(orient="records"), ensure_ascii=False)
 
 
-def get_top_5_transactions(dataframe_with_operations: pd.DataFrame, date_object: datetime.datetime) -> list | None:
+def get_top_5_transactions(dataframe_with_operations: pd.DataFrame, date_object: datetime.datetime) -> str | None:
     """Функция для получения 5 самых больших транзакций из датафрейма.
     Принимает датафрейм и дату, до которой будет происходить поиск в этом месяце.
     Вернет список словарей, который будет использоваться в главной функции для формирования JSON-объекта.
@@ -174,7 +173,7 @@ def get_top_5_transactions(dataframe_with_operations: pd.DataFrame, date_object:
     return json.dumps(top_5_transaction_by_sum, ensure_ascii=False)
 
 
-def get_currency_rate(user_setting_path: str = user_setting_path) -> list | None:
+def get_currency_rate(user_setting_path: str = user_setting_path) -> str | None:
     """Функция для получения курса валют.
     Получает курс только тех валют, которые указаны в файле user_setting.json
     Вернет список словарей, в котором каждый словарь - название валюты и её курс."""
@@ -202,7 +201,7 @@ def get_currency_rate(user_setting_path: str = user_setting_path) -> list | None
         return json.dumps([], ensure_ascii=False)
 
 
-def get_stocks_price(user_setting_path: str = user_setting_path) -> list | None:
+def get_stocks_price(user_setting_path: str = user_setting_path) -> str | None:
     """Функция для получения цен акций.
     Получает цены только тех акций, которые указаны в файле user_setting.json
     Вернет список словарей, в котором каждый словарь - название акции и её стоимость"""
@@ -237,7 +236,7 @@ def get_stocks_price(user_setting_path: str = user_setting_path) -> list | None:
 
 def get_expenses(
     operations: pd.DataFrame, date_end: datetime.datetime | None, date_start: datetime.datetime | None = None
-) -> dict | None:
+) -> str | None:
     """Функция для получения информации о расходах в указанном датафрейме.
     На вход получает путь до excel файла с информацией об операциях, дату начала для анализа информации
     и дату конца для анализа информации из датафрейма.
@@ -307,7 +306,7 @@ def get_expenses(
 
 def get_incoming_operations(
     operations: pd.DataFrame, date_end: datetime.datetime | None, date_start: datetime.datetime | None = None
-) -> dict | None:
+) -> str | None:
     """Функция для получения информации о поступлениях в датафрейме.
     Принимает на вход путь до датафрейма, дату начала анализа и дату конца анализа.
 

@@ -1,25 +1,16 @@
 # mypy: ignore-errors
 
 import datetime
+import json
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
 import requests
-import json
 
-from utils.functions import (
-    create_datetime_object,
-    get_currency_rate,
-    get_expenses,
-    get_incoming_operations,
-    get_info_about_card,
-    get_stocks_price,
-    get_time_of_day_greeting,
-    get_top_5_transactions,
-    operations_reader,
-    user_setting_reader,
-)
+from utils.functions import (create_datetime_object, get_currency_rate, get_expenses, get_incoming_operations,
+                             get_info_about_card, get_stocks_price, get_time_of_day_greeting, get_top_5_transactions,
+                             operations_reader, user_setting_reader)
 
 path_to_file = "data/operations.xlsx"
 
@@ -76,9 +67,10 @@ def test_get_info_about_card(get_df, get_date_object):
 
 def test_get_top_5_transactions(get_df, get_date_object):
     correct_result = get_top_5_transactions(get_df, get_date_object)
-    assert correct_result == json.dumps([
-        {"date": "2025-11-11 00:00:00", "amount": 100, "category": "Фастфуд", "description": "Тест"}
-    ], ensure_ascii=False)
+    assert correct_result == json.dumps(
+        [{"date": "2025-11-11 00:00:00", "amount": 100, "category": "Фастфуд", "description": "Тест"}],
+        ensure_ascii=False,
+    )
 
     none_result = get_top_5_transactions("not_dataframe", get_date_object)
     assert none_result == "[]"
@@ -115,7 +107,9 @@ def test_get_currency_rate(mock_get, mock_user_setting):
     }
 
     result = get_currency_rate()
-    assert result == json.dumps([{"currency": "USD", "rate": 81.0132}, {"currency": "EUR", "rate": 93.9287}], ensure_ascii=False)
+    assert result == json.dumps(
+        [{"currency": "USD", "rate": 81.0132}, {"currency": "EUR", "rate": 93.9287}], ensure_ascii=False
+    )
 
 
 @patch("requests.get")
@@ -154,13 +148,16 @@ def test_get_stocks_price(mock_get, mock_user_settings):
 
     result = get_stocks_price()
 
-    assert result == json.dumps([
-        {"stock": "AAPL", "price": 269.43},
-        {"stock": "AMZN", "price": 248.4},
-        {"stock": "GOOGL", "price": 290.1},
-        {"stock": "MSFT", "price": 506},
-        {"stock": "TSLA", "price": 445.23},
-    ], ensure_ascii=False)
+    assert result == json.dumps(
+        [
+            {"stock": "AAPL", "price": 269.43},
+            {"stock": "AMZN", "price": 248.4},
+            {"stock": "GOOGL", "price": 290.1},
+            {"stock": "MSFT", "price": 506},
+            {"stock": "TSLA", "price": 445.23},
+        ],
+        ensure_ascii=False,
+    )
 
 
 df = pd.DataFrame(
@@ -179,27 +176,32 @@ df = pd.DataFrame(
 def test_get_expenses(get_another_df, get_date_object, get_start_date_object):
     result = get_expenses(get_another_df, get_date_object, get_start_date_object)
 
-    expected = json.dumps({
-        "total_amount": 210,
-        "main": [{"category": "Переводы", "amount": 110}, {"category": "Фастфуд", "amount": 100}],
-        "other": "-",
-        "transfers_and_cash": [{"category": "Переводы", "amount": 110}],
-    }, ensure_ascii=False)
+    expected = json.dumps(
+        {
+            "total_amount": 210,
+            "main": [{"category": "Переводы", "amount": 110}, {"category": "Фастфуд", "amount": 100}],
+            "other": "-",
+            "transfers_and_cash": [{"category": "Переводы", "amount": 110}],
+        },
+        ensure_ascii=False,
+    )
 
     assert result == expected
 
     none_result = get_expenses("test_error", get_date_object, get_start_date_object)
-    assert none_result  == "{}"
+    assert none_result == "{}"
 
 
 def test_get_incoming_operations(get_incoming, get_date_object, get_start_date_object):
     result = get_incoming_operations(get_incoming, get_date_object, get_start_date_object)
-    assert result == json.dumps({"total_amount": 100, "main": [{"category": "Переводы", "amount": 100}]}
-                                ,ensure_ascii=False)
+    assert result == json.dumps(
+        {"total_amount": 100, "main": [{"category": "Переводы", "amount": 100}]}, ensure_ascii=False
+    )
 
     result_with_no_start_date = get_incoming_operations(get_incoming, get_date_object)
-    assert result_with_no_start_date == json.dumps({"total_amount": 100, "main": [{"category": "Переводы", "amount": 100}]}
-                                                   , ensure_ascii=False)
+    assert result_with_no_start_date == json.dumps(
+        {"total_amount": 100, "main": [{"category": "Переводы", "amount": 100}]}, ensure_ascii=False
+    )
 
     none_result = get_incoming_operations("error", get_date_object, get_start_date_object)
     assert none_result == "{}"

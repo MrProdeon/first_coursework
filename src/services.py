@@ -20,7 +20,7 @@ if not logger.handlers:
 
 def profitable_cashback(transactions: list[dict[str, Any]], year: str, month: str) -> str:
     """Функция для анализа выгоды, полученной от кэшбэка.
-    Принимает путь до файла с операциями, год для анализа и месяц для анализа.
+    Принимает список словарей с операциями, год для анализа и месяц для анализа.
     Возвращает JSON, состоящий из словаря, в котором отображены все кэшбэки
     по категориям на выбранный год и месяц"""
     resulted_dict = {}
@@ -50,7 +50,7 @@ def profitable_cashback(transactions: list[dict[str, Any]], year: str, month: st
     return json.dumps(resulted_dict, indent=4, ensure_ascii=False)
 
 
-def investment_bank(month: str, transactions: list[dict[str, Any]], limit: int) -> float | str:
+def investment_bank(month: str, transactions: list[dict[str, Any]], limit: str) -> float | str:
     """
     Функция для анализа информации о том, сколько можно было накопить, используя инвесткопилку
     :param month: Месяц, за который хотим получить информацию.
@@ -75,7 +75,7 @@ def investment_bank(month: str, transactions: list[dict[str, Any]], limit: int) 
         result: float = round(
             sum(
                 [
-                    (ceil(abs(row["Сумма операции"]) / limit) * limit) - abs(row["Сумма операции"])
+                    (ceil(abs(row["Сумма операции"]) / int(limit)) * int(limit)) - abs(row["Сумма операции"])
                     for index, row in df.iterrows()
                 ]
             ),
@@ -97,9 +97,11 @@ def simple_search(transactions: list[dict[str, Any]], string_for_search: str) ->
     try:
         logger.info("Начало работы функции")
         pattern = re.compile(rf"{string_for_search}")
-        result = [
-            dict_ for dict_ in transactions if pattern.search(dict_["Описание"]) or pattern.search(dict_["Категория"])
-        ]
+        for dict_ in transactions:
+            description = str(dict_.get("Описание", ""))
+            category = str(dict_.get("Категория", ""))
+            if pattern.search(description) or pattern.search(category):
+                result.append(dict_)
     except Exception as error:
         logger.error(f"Произошла ошибка {error}")
         return json.dumps(result)
@@ -133,11 +135,11 @@ def remittance_search(transactions: list[dict[str, Any]]) -> str:
     try:
         logger.info("Начало работы функции")
         pattern = re.compile(r"[А-ЯЁ][а-яё]+\s+[А-ЯЁ]\.$")
-        result = [
-            dict_
-            for dict_ in transactions
-            if pattern.search(dict_["Описание"]) and re.search("Переводы", dict_["Категория"])
-        ]
+        for dict_ in transactions:
+            description = str(dict_.get("Описание", ""))
+            category = str(dict_.get("Категория", ""))
+            if pattern.search(description) or pattern.search(category):
+                result.append(dict_)
     except Exception as error:
         logger.error(f"Произошла ошибка {error}")
         return json.dumps(result)

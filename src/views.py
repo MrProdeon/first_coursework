@@ -3,17 +3,9 @@ import json
 
 import pandas as pd
 
-from utils.functions import (
-    create_datetime_object,
-    get_currency_rate,
-    get_expenses,
-    get_incoming_operations,
-    get_info_about_card,
-    get_stocks_price,
-    get_time_of_day_greeting,
-    get_top_5_transactions,
-    operations_reader,
-)
+from utils.functions import (create_datetime_object, get_currency_rate, get_expenses, get_incoming_operations,
+                             get_info_about_card, get_stocks_price, get_time_of_day_greeting, get_top_5_transactions,
+                             operations_reader)
 
 path = r"data\operations.xlsx"
 df = operations_reader(path)
@@ -43,11 +35,11 @@ def main_page(date_string: str) -> str:
 
     operations = readed_file
     operations = operations.fillna("Информация не указана.")
-    info_about_card = json.loads(get_info_about_card(operations, date_object)) or []
-    top_5_transactions = json.loads(get_top_5_transactions(operations, date_object)) or []
+    info_about_card = json.loads(get_info_about_card(operations, date_object) or "[]")
+    top_5_transactions = json.loads(get_top_5_transactions(operations, date_object) or "[]")
 
-    currency_rate: list[dict[str, int | float]] | None = json.loads(get_currency_rate()) or []
-    stocks_price: list[dict[str, int | float]] | None = json.loads(get_stocks_price()) or []
+    currency_rate: list[dict[str, int | float]] | None = json.loads(get_currency_rate() or "[]")
+    stocks_price: list[dict[str, int | float]] | None = json.loads(get_stocks_price() or "[]")
 
     json_result = {
         "greeting": greeting,
@@ -60,10 +52,13 @@ def main_page(date_string: str) -> str:
     return json.dumps(json_result, indent=4, ensure_ascii=False, default=str)
 
 
-def events_page(operations : pd.DataFrame,date_string: str, date_range: str = "M") -> str:
+def events_page(operations: pd.DataFrame, date_string: str, date_range: str = "M") -> str:
     """Функция для формирования JSON-объекта, который будет использоваться для отображения
     страницы 'События' в приложении банка.
-    Принимает на вход строку даты и диапазон для поиска.
+    Принимает на вход строку даты и диапазон для поиска :
+    M - для поиска за текущий месяц
+    Y - для поиска за текущий год
+    ALL - за всё время
 
     Формирует информация о расходах, такую как общая сумма расходов, раздел "основные", в котором траты по
     категориям отсортированы по убыванию. Указаны 7 категорий с наибольшими тратами, а всё что не вошло -
@@ -88,10 +83,10 @@ def events_page(operations : pd.DataFrame,date_string: str, date_range: str = "M
     elif date_range == "ALL":
         date_start = None
 
-    expenses = get_expenses(operations, date_start, date_object)
-    incoming = get_incoming_operations(operations, date_start, date_object)
-    currency_rate = get_currency_rate()
-    stocks_price = get_stocks_price()
+    expenses = json.loads(get_expenses(operations, date_object, date_start) or "{}")
+    incoming = json.loads(get_incoming_operations(operations, date_object, date_start) or "{}")
+    currency_rate = json.loads(get_currency_rate() or "{}")
+    stocks_price = json.loads(get_stocks_price() or "{}")
 
     json_result = {
         "expenses": expenses,
@@ -103,7 +98,7 @@ def events_page(operations : pd.DataFrame,date_string: str, date_range: str = "M
     return json.dumps(json_result, indent=4, ensure_ascii=False)
 
 
-def show_main_page(date_string : str):
+def show_main_page(date_string: str) -> None:
     main_bank_page = json.loads(main_page(date_string))
     print(main_bank_page["greeting"])
     print("=" * 40)
@@ -115,15 +110,21 @@ def show_main_page(date_string : str):
     print("=" * 40)
     print("Самые большие покупки: ")
     for transaction in main_bank_page["top_transactions"]:
-        print(f"""Дата : {transaction["date"]}
+        print(
+            f"""Дата : {transaction["date"]}
 Сумма : {transaction["amount"]}
 Категория {transaction["category"]}:
-Описание: {transaction["description"]}\n""")
+Описание: {transaction["description"]}\n"""
+        )
     print("=" * 40)
-    print("Курсы выбранных валют: ")
+    print("Курс выбранных валют:")
     for rate in main_bank_page["currency_rates"]:
-        print(f"Валюта : {rate["currency"]}, курс : {rate["rate"]}\n")
+        print(f"Валюта: {rate["currency"]}")
+        print(f"стоимость: {rate["rate"]}")
+        print("-" * 40)
     print("=" * 40)
     print("Стоимость выбранных акций: ")
     for stock in main_bank_page["stocks_prices"]:
-        print(f"Акция : {stock["stock"]}, цена : {stock["price"]}\n")
+        print(f"Акция: {stock["stock"]}")
+        print(f"Стоимость: {stock["price"]}")
+        print("-" * 40)
